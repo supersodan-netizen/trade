@@ -1,0 +1,14 @@
+{
+  "name": "Gemelo de Mercado",
+  "short_name": "Gemelo",
+  "description": "Heatmap del mercado y gemelo digital de cartera.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0f17",
+  "theme_color": "#0b0f17",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
