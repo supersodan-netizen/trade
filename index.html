@@ -243,7 +243,7 @@ let cbN=0;
 function jsonp(action){
   return new Promise((res,rej)=>{
     const name='__gm'+(++cbN), s=document.createElement('script');
-    const to=setTimeout(()=>{cleanup();rej(new Error('timeout'))},25000);
+    const to=setTimeout(()=>{cleanup();rej(new Error('timeout'))},60000);
     function cleanup(){ clearTimeout(to); delete window[name]; s.remove(); }
     window[name]=d=>{ cleanup(); res(d); };
     const u=getUrl()+'?callback='+name+(action?'&action='+action:'')+'&_='+Date.now();
@@ -475,7 +475,9 @@ async function load(silent){
 async function act(a,msg){
   $('#loadMsg').textContent=msg; $('#loading').classList.add('show');
   try{ STATE=await jsonp(a); saveCache(); render(); }
-  catch(e){ alert('No se pudo completar (revisa la conexión o vuelve a desplegar la app web).'); }
+  catch(e){ alert(e.message==='timeout'
+    ? 'El servidor tardó demasiado (timeout de 60 s). La descarga de Yahoo puede ir lenta; reinténtalo en un momento. Si pasa siempre, dímelo y reducimos el universo.'
+    : 'No se pudo conectar con el backend. Comprueba: (1) la app web está desplegada como VERSIÓN NUEVA, (2) acceso = "Cualquiera", (3) la URL termina en /exec.'); }
   $('#loading').classList.remove('show');
 }
 async function silentAct(a){ $('#dot').classList.add('sync');
