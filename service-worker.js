@@ -1,4 +1,4 @@
-const CACHE = 'gemelo-v3';
+const CACHE = 'gemelo-v4';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', e => {
