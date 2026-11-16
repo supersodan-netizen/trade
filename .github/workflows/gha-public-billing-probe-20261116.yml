@@ -1,0 +1,16 @@
+name: Public Actions billing probe (safe)
+on:
+  push:
+    branches:
+      - test/gha-public-billing-20261116
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  billing-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check public-hosted runner availability
+        shell: bash
+        run: echo "OK - public GitHub Actions runner executed"
