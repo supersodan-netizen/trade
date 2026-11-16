@@ -1,6 +1,10 @@
 name: TRADE private audit - public runner C7F local only
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/gha-trade-private-c7f-local-20261116.yml
   schedule:
     - cron: '23 */2 * * *'
 permissions:
@@ -44,3 +48,12 @@ jobs:
           node-version: '22'
       - name: Execute C7F local test workflow with public logs suppressed
         run: node public-runner/scripts/run-c7f-private-local-only.mjs private-trade
+      - name: C7O offline diff plan only, fail closed and NO GAS deployment
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c7o-paper-diff-plan-only.cjs
+          node scripts/73x39j-c18-p0c7o-paper-diff-plan-only.cjs --self-test
+          trap 'rm -f c7o-plan-ci.log' EXIT
+          node scripts/73x39j-c18-p0c7o-paper-diff-plan-only.cjs --plan-only > c7o-plan-ci.log
+          grep -Fx 'TRADE_C7O_DIFF_PLAN_ONLY_PASS_HOLD_NO_GAS_NO_DEPLOY' c7o-plan-ci.log
