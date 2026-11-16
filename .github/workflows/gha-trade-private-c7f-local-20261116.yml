@@ -1,0 +1,46 @@
+name: TRADE private audit - public runner C7F local only
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 */2 * * *'
+permissions:
+  contents: read
+concurrency:
+  group: trade-private-c7f-local-only
+  cancel-in-progress: true
+jobs:
+  local-c7f:
+    if: github.repository == 'supersodan-netizen/trade' && (github.event_name == 'schedule' || github.actor == 'supersodan-netizen')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Verify read-only private credential configured
+        env:
+          READ_TOKEN: ${{ secrets.TRADE_STAGING_READ_TOKEN }}
+        run: |
+          if [ -z "${READ_TOKEN:-}" ]; then
+            echo HOLD_PRIVATE_READ_TOKEN_NOT_CONFIGURED
+            exit 2
+          fi
+      - name: Checkout public CI wrapper without persisted credentials
+        uses: actions/checkout@v5
+        with:
+          path: public-runner
+          persist-credentials: false
+      - name: Checkout private TRADE source, only audit branch and latest commit
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: audit/73x39j-c18-canonical-executor
+          token: ${{ secrets.TRADE_STAGING_READ_TOKEN }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-trade
+      - name: Set up Node 22 for frozen C7F local regression
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Execute C7F local test workflow with public logs suppressed
+        run: node public-runner/scripts/run-c7f-private-local-only.mjs private-trade
