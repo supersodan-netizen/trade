@@ -84,3 +84,12 @@ jobs:
           trap 'rm -f c7r-private-seam-ci.log' EXIT
           node scripts/73x39j-c18-p0c7r-commit-seam-local.cjs --plan-only > c7r-private-seam-ci.log
           grep -Fx 'TRADE_C7R_REVERSIBLE_SINGLE_COMMIT_SOURCE_PLAN_PASS_HOLD_GAS_NO_DEPLOY' c7r-private-seam-ci.log
+      - name: C7S integrated V8 mock financial journal and recovery cuts, NO GAS
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c7s-integrated-replay-vm-local.cjs
+          node scripts/73x39j-c18-p0c7s-integrated-replay-vm-local.cjs --self-test
+          trap 'rm -f c7s-private-mock-ci.log' EXIT
+          node scripts/73x39j-c18-p0c7s-integrated-replay-vm-local.cjs --plan-only > c7s-private-mock-ci.log
+          grep -Fx 'TRADE_C7S_INTEGRATED_MOCK_VM_PASS_HOLD_PHYSICAL_NO_GAS_NO_DEPLOY' c7s-private-mock-ci.log
