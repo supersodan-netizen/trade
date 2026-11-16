@@ -93,3 +93,13 @@ jobs:
           trap 'rm -f c7s-private-mock-ci.log' EXIT
           node scripts/73x39j-c18-p0c7s-integrated-replay-vm-local.cjs --plan-only > c7s-private-mock-ci.log
           grep -Fx 'TRADE_C7S_INTEGRATED_MOCK_VM_PASS_HOLD_PHYSICAL_NO_GAS_NO_DEPLOY' c7s-private-mock-ci.log
+
+      - name: C7T helper source guards and extended LAB fault/replay VM, NO GAS
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c7t-helper-fault-replay-local.cjs
+          node scripts/73x39j-c18-p0c7t-helper-fault-replay-local.cjs --self-test
+          trap 'rm -f c7t-private-fault-ci.log' EXIT
+          node scripts/73x39j-c18-p0c7t-helper-fault-replay-local.cjs --plan-only > c7t-private-fault-ci.log
+          grep -Fx 'TRADE_C7T_HELPER_AND_FAULT_MATRIX_PASS_HOLD_NO_GAS_NO_DEPLOY' c7t-private-fault-ci.log
