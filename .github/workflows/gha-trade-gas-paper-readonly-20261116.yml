@@ -1,0 +1,55 @@
+name: TRADE 73X39J C7M - PAPER HEAD read-only independent
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/gha-trade-gas-paper-readonly-20261116.yml
+      - scripts/verify-trade-gas-paper-head-readonly.cjs
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 'Type READ_PAPER_HEAD_ONLY (NOT W, NOT deployment)'
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: trade-gas-paper-head-observer
+  cancel-in-progress: false
+jobs:
+  local-verifier:
+    if: github.repository == 'supersodan-netizen/trade' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Local-only syntax and 9 fail-closed checks, never Google
+        run: |
+          set -euo pipefail
+          node --check scripts/verify-trade-gas-paper-head-readonly.cjs
+          node scripts/verify-trade-gas-paper-head-readonly.cjs --self-test
+  read-paper-head:
+    needs: local-verifier
+    if: github.event_name == 'workflow_dispatch' && github.actor == 'supersodan-netizen' && github.ref == 'refs/heads/main' && inputs.approval == 'READ_PAPER_HEAD_ONLY'
+    environment: trade-gas-paper-readonly
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Authenticated GET only, PAPER script and parent; no source in public logs
+        env:
+          TRADE_GAS_PAPER_READONLY_ACCESS_TOKEN: ${{ secrets.TRADE_GAS_PAPER_READONLY_ACCESS_TOKEN }}
+          TRADE_PAPER_READBACK_CONFIRM: ${{ inputs.approval }}
+        run: |
+          set -euo pipefail
+          node scripts/verify-trade-gas-paper-head-readonly.cjs
