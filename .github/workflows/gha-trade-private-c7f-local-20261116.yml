@@ -1,10 +1,8 @@
 name: TRADE private audit - public runner C7F local only
 on:
-  push:
-    branches: [main]
-    paths:
-      - .github/workflows/gha-trade-private-c7f-local-20261116.yml
   workflow_dispatch:
+  schedule:
+    - cron: '23 */2 * * *'
 permissions:
   contents: read
 concurrency:
