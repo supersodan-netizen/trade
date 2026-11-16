@@ -16,10 +16,10 @@ jobs:
     steps:
       - name: Verify read-only private credential configured
         env:
-          READ_TOKEN: ${{ secrets.TRADE_STAGING_READ_TOKEN }}
+          READ_KEY: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
         run: |
-          if [ -z "${READ_TOKEN:-}" ]; then
-            echo HOLD_PRIVATE_READ_TOKEN_NOT_CONFIGURED
+          if [ -z "${READ_KEY:-}" ]; then
+            echo HOLD_PRIVATE_READ_KEY_NOT_CONFIGURED
             exit 2
           fi
       - name: Checkout public CI wrapper without persisted credentials
@@ -32,7 +32,7 @@ jobs:
         with:
           repository: supersodan-netizen/trade-staging
           ref: audit/73x39j-c18-canonical-executor
-          token: ${{ secrets.TRADE_STAGING_READ_TOKEN }}
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
           submodules: false
