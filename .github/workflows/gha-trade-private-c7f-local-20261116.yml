@@ -66,3 +66,12 @@ jobs:
           trap 'rm -f c7p-private-manifest-ci.log' EXIT
           node scripts/73x39j-c18-p0c7p-bundle-inventory-local.cjs --plan-only > c7p-private-manifest-ci.log
           grep -Fx 'TRADE_C7P_PRIVATE_BUNDLE_INVENTORY_PASS_HOLD_INCOMPLETE_EXECUTOR_NO_GAS_NO_DEPLOY' c7p-private-manifest-ci.log
+      - name: C7Q reconcile LAB runtime owners, reject commit fork and incomplete closure
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c7q-runtime-reconcile-local.cjs
+          node scripts/73x39j-c18-p0c7q-runtime-reconcile-local.cjs --self-test
+          trap 'rm -f c7q-reconcile-ci.log' EXIT
+          node scripts/73x39j-c18-p0c7q-runtime-reconcile-local.cjs --plan-only > c7q-reconcile-ci.log
+          grep -Fx 'TRADE_C7Q_OWNER_RECONCILIATION_PASS_HOLD_COMMIT_FORK_NO_GAS_NO_DEPLOY' c7q-reconcile-ci.log
