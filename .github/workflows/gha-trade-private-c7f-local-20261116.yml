@@ -75,3 +75,12 @@ jobs:
           trap 'rm -f c7q-reconcile-ci.log' EXIT
           node scripts/73x39j-c18-p0c7q-runtime-reconcile-local.cjs --plan-only > c7q-reconcile-ci.log
           grep -Fx 'TRADE_C7Q_OWNER_RECONCILIATION_PASS_HOLD_COMMIT_FORK_NO_GAS_NO_DEPLOY' c7q-reconcile-ci.log
+      - name: C7R reversible LAB-only C5Y C6W commit seam and fail-closed negative checks
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c7r-commit-seam-local.cjs
+          node scripts/73x39j-c18-p0c7r-commit-seam-local.cjs --self-test
+          trap 'rm -f c7r-private-seam-ci.log' EXIT
+          node scripts/73x39j-c18-p0c7r-commit-seam-local.cjs --plan-only > c7r-private-seam-ci.log
+          grep -Fx 'TRADE_C7R_REVERSIBLE_SINGLE_COMMIT_SOURCE_PLAN_PASS_HOLD_GAS_NO_DEPLOY' c7r-private-seam-ci.log
