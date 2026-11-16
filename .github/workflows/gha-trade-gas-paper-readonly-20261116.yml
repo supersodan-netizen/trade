@@ -5,6 +5,7 @@ on:
     paths:
       - .github/workflows/gha-trade-gas-paper-readonly-20261116.yml
       - scripts/verify-trade-gas-paper-head-readonly.cjs
+      - scripts/setup-trade-gas-paper-readonly-oauth.mjs
   workflow_dispatch:
     inputs:
       approval:
@@ -28,11 +29,13 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - name: Local-only syntax and 9 fail-closed checks, never Google
+      - name: Local-only syntax and OAuth fail-closed checks, never Google
         run: |
           set -euo pipefail
           node --check scripts/verify-trade-gas-paper-head-readonly.cjs
+          node --check scripts/setup-trade-gas-paper-readonly-oauth.mjs
           node scripts/verify-trade-gas-paper-head-readonly.cjs --self-test
+          node scripts/setup-trade-gas-paper-readonly-oauth.mjs --self-test
   read-paper-head:
     needs: local-verifier
     if: github.event_name == 'workflow_dispatch' && github.actor == 'supersodan-netizen' && github.ref == 'refs/heads/main' && inputs.approval == 'READ_PAPER_HEAD_ONLY'
@@ -48,7 +51,9 @@ jobs:
           node-version: '22'
       - name: Authenticated GET only, PAPER script and parent; no source in public logs
         env:
-          TRADE_GAS_PAPER_READONLY_ACCESS_TOKEN: ${{ secrets.TRADE_GAS_PAPER_READONLY_ACCESS_TOKEN }}
+          TRADE_GAS_RO_CLIENT_ID: ${{ secrets.TRADE_GAS_RO_CLIENT_ID }}
+          TRADE_GAS_RO_CLIENT_SECRET: ${{ secrets.TRADE_GAS_RO_CLIENT_SECRET }}
+          TRADE_GAS_RO_REFRESH_TOKEN: ${{ secrets.TRADE_GAS_RO_REFRESH_TOKEN }}
           TRADE_PAPER_READBACK_CONFIRM: ${{ inputs.approval }}
         run: |
           set -euo pipefail
