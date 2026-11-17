@@ -238,3 +238,13 @@ jobs:
           node scripts/73x39j-c18-p0c8g-api-ack-journal-readback-full-rc-lab.cjs --plan-only > c8g-private-plan-ci.log
           grep -Fx 'TRADE_C8G_19_P0_PENDING_HOLD_NO_GAS_NO_DEPLOY' c8g-private-plan-ci.log
           grep -F '517bdf84e0f444a6f4795f0d0b08cd7e64203b91c9796140e24a19aa47d1af06' c8g-private-plan-ci.log >/dev/null
+
+      - name: C8H five-stage commit and replay fence on private full RC, VM MOCK only
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c8h-commit-replay-fault-fence-full-rc-lab.cjs
+          node scripts/73x39j-c18-p0c8h-commit-replay-fault-fence-full-rc-lab.cjs --self-test
+          trap 'rm -f c8h-private-plan-ci.log' EXIT
+          node scripts/73x39j-c18-p0c8h-commit-replay-fault-fence-full-rc-lab.cjs --plan-only > c8h-private-plan-ci.log
+          grep -Fx 'TRADE_C8H_REPLAY_HOLD_NO_AUTO_REPAIR_NO_DEPLOY_NO_LIVE' c8h-private-plan-ci.log
