@@ -205,3 +205,13 @@ jobs:
           node scripts/73x39j-c18-p0c8d-config-reset-failclosed-full-rc-lab.cjs --plan-only > c8d-private-plan-ci.log
           grep -Fx 'TRADE_C8D_19_P0_PENDING_HOLD_NO_GAS_NO_DEPLOY' c8d-private-plan-ci.log
           grep -F 'f1e58f2cf3318ee656e23634ad9bc9a73a2a6e93b1c6362d74d41b32ebdad005' c8d-private-plan-ci.log >/dev/null
+
+      - name: C8E defensive stop liveness and BUY admission separation on same full RC MOCK only
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c8e-stop-liveness-buy-separation-full-rc-lab.cjs
+          node scripts/73x39j-c18-p0c8e-stop-liveness-buy-separation-full-rc-lab.cjs --self-test
+          trap 'rm -f c8e-private-ci-plan.log' EXIT
+          node scripts/73x39j-c18-p0c8e-stop-liveness-buy-separation-full-rc-lab.cjs --plan-only > c8e-private-ci-plan.log
+          grep -Fx 'TRADE_C8E_19_P0_PENDING_HOLD_NO_GAS_NO_DEPLOY' c8e-private-ci-plan.log
