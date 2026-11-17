@@ -237,3 +237,4 @@ jobs:
           trap 'rm -f c8g-private-plan-ci.log' EXIT
           node scripts/73x39j-c18-p0c8g-api-ack-journal-readback-full-rc-lab.cjs --plan-only > c8g-private-plan-ci.log
           grep -Fx 'TRADE_C8G_19_P0_PENDING_HOLD_NO_GAS_NO_DEPLOY' c8g-private-plan-ci.log
+          grep -F '517bdf84e0f444a6f4795f0d0b08cd7e64203b91c9796140e24a19aa47d1af06' c8g-private-plan-ci.log >/dev/null
