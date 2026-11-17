@@ -270,3 +270,4 @@ jobs:
           trap 'rm -f c8j-private-plan-ci.log' EXIT
           node scripts/73x39j-c18-p0c8j-e19-2027-dual-gate-failclosed-full-rc-lab.cjs --plan-only > c8j-private-plan-ci.log
           grep -Fx 'TRADE_C8J_E19_UNRECONCILED_NO_RESET_2027_NO_DEPLOY_NO_LIVE' c8j-private-plan-ci.log
+          grep -F 'fe32ee7bcfbb9cb07f6bc2fbc76818795f7fb379c7d187b1318ba5d1fd53cf4c' c8j-private-plan-ci.log >/dev/null
