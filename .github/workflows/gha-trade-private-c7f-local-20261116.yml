@@ -173,3 +173,13 @@ jobs:
           trap 'rm -f c8a-private-review-manifest.log' EXIT
           node scripts/73x39j-c18-p0c8a-full-rc-review-builder-local.cjs --plan-only > c8a-private-review-manifest.log
           grep -Fx 'TRADE_C8A_RC_REVIEW_ONLY_P0_OPEN_HOLD_NO_GAS_NO_DEPLOY' c8a-private-review-manifest.log
+
+      - name: C8B same full RC stop priority and queue uncertainty anchored source tests ONLY, NO GAS
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c8b-queue-stop-source-rc-lab.cjs
+          node scripts/73x39j-c18-p0c8b-queue-stop-source-rc-lab.cjs --self-test
+          trap 'rm -f c8b-private-only-plan.log' EXIT
+          node scripts/73x39j-c18-p0c8b-queue-stop-source-rc-lab.cjs --plan-only > c8b-private-only-plan.log
+          grep -Fx 'TRADE_C8B_HOLD_19_P0_PENDING_INDEPENDENT_REVIEW_NO_GAS_NO_DEPLOY' c8b-private-only-plan.log
