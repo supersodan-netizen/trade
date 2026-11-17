@@ -183,3 +183,13 @@ jobs:
           trap 'rm -f c8b-private-only-plan.log' EXIT
           node scripts/73x39j-c18-p0c8b-queue-stop-source-rc-lab.cjs --plan-only > c8b-private-only-plan.log
           grep -Fx 'TRADE_C8B_HOLD_19_P0_PENDING_INDEPENDENT_REVIEW_NO_GAS_NO_DEPLOY' c8b-private-only-plan.log
+
+      - name: C8C full RC genuine reservation/watcher/prejournal function tests with mocks ONLY
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c8c-reservation-watcher-prejournal-full-rc-lab.cjs
+          node scripts/73x39j-c18-p0c8c-reservation-watcher-prejournal-full-rc-lab.cjs --self-test
+          trap 'rm -f c8c-plan-private-ci.log' EXIT
+          node scripts/73x39j-c18-p0c8c-reservation-watcher-prejournal-full-rc-lab.cjs --plan-only > c8c-plan-private-ci.log
+          grep -Fx 'TRADE_C8C_19_P0_PENDING_HOLD_NO_GAS_NO_DEPLOY' c8c-plan-private-ci.log
