@@ -143,3 +143,13 @@ jobs:
           trap 'rm -f c7x-inmemory-overlay-ci.log' EXIT
           node scripts/73x39j-c18-p0c7x-failclosed-caller-overlay-lab.cjs --plan-only > c7x-inmemory-overlay-ci.log
           grep -Fx 'TRADE_C7X_HOLD_PHYSICAL_PATCH_ONLY_IN_MEMORY_NO_CREDENTIALS_NO_DEPLOY' c7x-inmemory-overlay-ci.log
+
+      - name: C7Y adversarial alert durability, replay and outside-lock writer races, VM ONLY
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c7y-alert-durability-writer-races-lab.cjs
+          node scripts/73x39j-c18-p0c7y-alert-durability-writer-races-lab.cjs --self-test
+          trap 'rm -f c7y-adversarial-private-ci.log' EXIT
+          node scripts/73x39j-c18-p0c7y-alert-durability-writer-races-lab.cjs --plan-only > c7y-adversarial-private-ci.log
+          grep -Fx 'TRADE_C7Y_EXTERNAL_EVIDENCE_REQUIRED_P0_OPEN_HOLD_NO_GAS_NO_DEPLOY' c7y-adversarial-private-ci.log
