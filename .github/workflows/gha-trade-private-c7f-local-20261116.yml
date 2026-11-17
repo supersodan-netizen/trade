@@ -216,3 +216,13 @@ jobs:
           node scripts/73x39j-c18-p0c8e-stop-liveness-buy-separation-full-rc-lab.cjs --plan-only > c8e-private-ci-plan.log
           grep -Fx 'TRADE_C8E_19_P0_PENDING_HOLD_NO_GAS_NO_DEPLOY' c8e-private-ci-plan.log
           grep -F '7757401ac209e00b4e68361332b99ad58380916e8fa9a53315468f4c14758e11' c8e-private-ci-plan.log >/dev/null
+
+      - name: C8F stop alert/maintenance and postjournal uncertainty source VM MOCK only
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c8f-stop-alerts-maintenance-postjournal-full-rc-lab.cjs
+          node scripts/73x39j-c18-p0c8f-stop-alerts-maintenance-postjournal-full-rc-lab.cjs --self-test
+          trap 'rm -f c8f-private-ci-plan.log' EXIT
+          node scripts/73x39j-c18-p0c8f-stop-alerts-maintenance-postjournal-full-rc-lab.cjs --plan-only > c8f-private-ci-plan.log
+          grep -Fx 'TRADE_C8F_19_P0_PENDING_HOLD_NO_GAS_NO_DEPLOY' c8f-private-ci-plan.log
