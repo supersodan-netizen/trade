@@ -193,3 +193,4 @@ jobs:
           trap 'rm -f c8c-plan-private-ci.log' EXIT
           node scripts/73x39j-c18-p0c8c-reservation-watcher-prejournal-full-rc-lab.cjs --plan-only > c8c-plan-private-ci.log
           grep -Fx 'TRADE_C8C_19_P0_PENDING_HOLD_NO_GAS_NO_DEPLOY' c8c-plan-private-ci.log
+          grep -F '15ee4f815ceff13cd9264437ff6a56038b518dd336b36c2451da1b7c7378f81c' c8c-plan-private-ci.log >/dev/null
