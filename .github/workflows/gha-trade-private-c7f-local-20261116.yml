@@ -163,3 +163,13 @@ jobs:
           trap 'rm -f c7z-audit-hold-private-ci.log' EXIT
           node scripts/73x39j-c18-p0c7z-audit-release-gates-evidence-inventory-local.cjs --plan-only > c7z-audit-hold-private-ci.log
           grep -Fx 'TRADE_C7Z_G0_G5_AND_EXTERNAL_EVIDENCE_HOLD_CLOSED_LAB_ONLY_NO_DEPLOY' c7z-audit-hold-private-ci.log
+
+      - name: C8A assemble full review source, seven anchored patches and real caller fault tests, NO GAS
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c8a-full-rc-review-builder-local.cjs
+          node scripts/73x39j-c18-p0c8a-full-rc-review-builder-local.cjs --self-test
+          trap 'rm -f c8a-private-review-manifest.log' EXIT
+          node scripts/73x39j-c18-p0c8a-full-rc-review-builder-local.cjs --plan-only > c8a-private-review-manifest.log
+          grep -Fx 'TRADE_C8A_RC_REVIEW_ONLY_P0_OPEN_HOLD_NO_GAS_NO_DEPLOY' c8a-private-review-manifest.log
