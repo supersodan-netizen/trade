@@ -215,3 +215,4 @@ jobs:
           trap 'rm -f c8e-private-ci-plan.log' EXIT
           node scripts/73x39j-c18-p0c8e-stop-liveness-buy-separation-full-rc-lab.cjs --plan-only > c8e-private-ci-plan.log
           grep -Fx 'TRADE_C8E_19_P0_PENDING_HOLD_NO_GAS_NO_DEPLOY' c8e-private-ci-plan.log
+          grep -F '841645d78f8565ad93d3406b2f5111dab827079b11806f6a5578ec48cf69067a' c8e-private-ci-plan.log >/dev/null
