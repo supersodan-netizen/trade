@@ -260,3 +260,13 @@ jobs:
           node scripts/73x39j-c18-p0c8i-r08-cash-effective-date-dupes-full-rc-lab.cjs --plan-only > c8i-private-plan-ci.log
           grep -Fx 'TRADE_C8I_19_P0_UNCERTIFIED_HOLD_NO_GAS_NO_DEPLOY' c8i-private-plan-ci.log
           grep -F 'ea8b49289bc3de8874b1b17baf41e6f0189baa18b9cf46738054ec267ee9444a' c8i-private-plan-ci.log >/dev/null
+
+      - name: C8J E19 2027 dual gate, 2026 unresolved monitoring and safety alerts, VM MOCK only
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c8j-e19-2027-dual-gate-failclosed-full-rc-lab.cjs
+          node scripts/73x39j-c18-p0c8j-e19-2027-dual-gate-failclosed-full-rc-lab.cjs --self-test
+          trap 'rm -f c8j-private-plan-ci.log' EXIT
+          node scripts/73x39j-c18-p0c8j-e19-2027-dual-gate-failclosed-full-rc-lab.cjs --plan-only > c8j-private-plan-ci.log
+          grep -Fx 'TRADE_C8J_E19_UNRECONCILED_NO_RESET_2027_NO_DEPLOY_NO_LIVE' c8j-private-plan-ci.log
