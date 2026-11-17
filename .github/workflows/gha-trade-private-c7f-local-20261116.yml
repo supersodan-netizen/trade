@@ -226,3 +226,4 @@ jobs:
           trap 'rm -f c8f-private-ci-plan.log' EXIT
           node scripts/73x39j-c18-p0c8f-stop-alerts-maintenance-postjournal-full-rc-lab.cjs --plan-only > c8f-private-ci-plan.log
           grep -Fx 'TRADE_C8F_19_P0_PENDING_HOLD_NO_GAS_NO_DEPLOY' c8f-private-ci-plan.log
+          grep -F 'b7488a36f9bfbed0fe2095f2371f10826530a67afe67912f29e5c3ab3707ec1d' c8f-private-ci-plan.log >/dev/null
