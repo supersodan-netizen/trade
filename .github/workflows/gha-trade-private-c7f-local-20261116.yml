@@ -249,3 +249,13 @@ jobs:
           node scripts/73x39j-c18-p0c8h-commit-replay-fault-fence-full-rc-lab.cjs --plan-only > c8h-private-plan-ci.log
           grep -Fx 'TRADE_C8H_REPLAY_HOLD_NO_AUTO_REPAIR_NO_DEPLOY_NO_LIVE' c8h-private-plan-ci.log
           grep -F '4cb2dfea6ab0738d41072a6b3b9c2b4b551eb983b1094150b2c5773ece58a772' c8h-private-plan-ci.log >/dev/null
+
+      - name: C8I TR R08 effective dated cash, duplicate refs and IUSQ evidence, VM MOCK only
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c8i-r08-cash-effective-date-dupes-full-rc-lab.cjs
+          node scripts/73x39j-c18-p0c8i-r08-cash-effective-date-dupes-full-rc-lab.cjs --self-test
+          trap 'rm -f c8i-private-plan-ci.log' EXIT
+          node scripts/73x39j-c18-p0c8i-r08-cash-effective-date-dupes-full-rc-lab.cjs --plan-only > c8i-private-plan-ci.log
+          grep -Fx 'TRADE_C8I_19_P0_UNCERTIFIED_HOLD_NO_GAS_NO_DEPLOY' c8i-private-plan-ci.log
