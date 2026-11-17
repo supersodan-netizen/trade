@@ -133,3 +133,13 @@ jobs:
           trap 'rm -f c7w-caller-private-ci.log' EXIT
           node scripts/73x39j-c18-p0c7w-authentic-caller-exception-vm-local.cjs --plan-only > c7w-caller-private-ci.log
           grep -Fx 'TRADE_C7W_RECOVERY_HAZARDS_REQUIRE_SIGNED_PHYSICAL_FORENSICS_HOLD_NO_GAS_NO_DEPLOY' c7w-caller-private-ci.log
+
+      - name: C7X isolated reversible fail-closed overlay against authentic callers, NO GAS
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c7x-failclosed-caller-overlay-lab.cjs
+          node scripts/73x39j-c18-p0c7x-failclosed-caller-overlay-lab.cjs --self-test
+          trap 'rm -f c7x-inmemory-overlay-ci.log' EXIT
+          node scripts/73x39j-c18-p0c7x-failclosed-caller-overlay-lab.cjs --plan-only > c7x-inmemory-overlay-ci.log
+          grep -Fx 'TRADE_C7X_HOLD_PHYSICAL_PATCH_ONLY_IN_MEMORY_NO_CREDENTIALS_NO_DEPLOY' c7x-inmemory-overlay-ci.log
