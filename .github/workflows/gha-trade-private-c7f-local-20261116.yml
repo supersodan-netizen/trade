@@ -259,3 +259,4 @@ jobs:
           trap 'rm -f c8i-private-plan-ci.log' EXIT
           node scripts/73x39j-c18-p0c8i-r08-cash-effective-date-dupes-full-rc-lab.cjs --plan-only > c8i-private-plan-ci.log
           grep -Fx 'TRADE_C8I_19_P0_UNCERTIFIED_HOLD_NO_GAS_NO_DEPLOY' c8i-private-plan-ci.log
+          grep -F 'ea8b49289bc3de8874b1b17baf41e6f0189baa18b9cf46738054ec267ee9444a' c8i-private-plan-ci.log >/dev/null
