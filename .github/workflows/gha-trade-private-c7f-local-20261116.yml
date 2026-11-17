@@ -113,3 +113,13 @@ jobs:
           trap 'rm -f c7u-helper-fixture-ci.log' EXIT
           node scripts/73x39j-c18-p0c7u-authentic-helper-vm-local.cjs --plan-only > c7u-helper-fixture-ci.log
           grep -Fx 'TRADE_C7U_REAL_HELPERS_VM_PASS_HOLD_PHYSICAL_NO_GAS_NO_DEPLOY' c7u-helper-fixture-ci.log
+
+      - name: C7V read-only ledger-anchor and journal-clear triage using authentic CORE helper VM, NO GAS
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c7v-ledger-clear-readonly-triage-local.cjs
+          node scripts/73x39j-c18-p0c7v-ledger-clear-readonly-triage-local.cjs --self-test
+          trap 'rm -f c7v-triage-ci.log' EXIT
+          node scripts/73x39j-c18-p0c7v-ledger-clear-readonly-triage-local.cjs --plan-only > c7v-triage-ci.log
+          grep -Fx 'TRADE_C7V_HOLD_ONLY_REPAIR_DECISION_MATRIX_PASS_NO_GAS_NO_DEPLOY' c7v-triage-ci.log
