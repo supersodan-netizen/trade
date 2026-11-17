@@ -227,3 +227,13 @@ jobs:
           node scripts/73x39j-c18-p0c8f-stop-alerts-maintenance-postjournal-full-rc-lab.cjs --plan-only > c8f-private-ci-plan.log
           grep -Fx 'TRADE_C8F_19_P0_PENDING_HOLD_NO_GAS_NO_DEPLOY' c8f-private-ci-plan.log
           grep -F 'b7488a36f9bfbed0fe2095f2371f10826530a67afe67912f29e5c3ab3707ec1d' c8f-private-ci-plan.log >/dev/null
+
+      - name: C8G API ACK vs human receipt and full journal readback source V8 MOCK only
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c8g-api-ack-journal-readback-full-rc-lab.cjs
+          node scripts/73x39j-c18-p0c8g-api-ack-journal-readback-full-rc-lab.cjs --self-test
+          trap 'rm -f c8g-private-plan-ci.log' EXIT
+          node scripts/73x39j-c18-p0c8g-api-ack-journal-readback-full-rc-lab.cjs --plan-only > c8g-private-plan-ci.log
+          grep -Fx 'TRADE_C8G_19_P0_PENDING_HOLD_NO_GAS_NO_DEPLOY' c8g-private-plan-ci.log
