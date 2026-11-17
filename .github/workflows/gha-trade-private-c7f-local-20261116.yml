@@ -248,3 +248,4 @@ jobs:
           trap 'rm -f c8h-private-plan-ci.log' EXIT
           node scripts/73x39j-c18-p0c8h-commit-replay-fault-fence-full-rc-lab.cjs --plan-only > c8h-private-plan-ci.log
           grep -Fx 'TRADE_C8H_REPLAY_HOLD_NO_AUTO_REPAIR_NO_DEPLOY_NO_LIVE' c8h-private-plan-ci.log
+          grep -F '4cb2dfea6ab0738d41072a6b3b9c2b4b551eb983b1094150b2c5773ece58a772' c8h-private-plan-ci.log >/dev/null
