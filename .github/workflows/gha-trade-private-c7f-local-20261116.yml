@@ -153,3 +153,13 @@ jobs:
           trap 'rm -f c7y-adversarial-private-ci.log' EXIT
           node scripts/73x39j-c18-p0c7y-alert-durability-writer-races-lab.cjs --plan-only > c7y-adversarial-private-ci.log
           grep -Fx 'TRADE_C7Y_EXTERNAL_EVIDENCE_REQUIRED_P0_OPEN_HOLD_NO_GAS_NO_DEPLOY' c7y-adversarial-private-ci.log
+
+      - name: C7Z audit release acceptance gates and 12 independent evidence blockers, NO GAS
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c7z-audit-release-gates-evidence-inventory-local.cjs
+          node scripts/73x39j-c18-p0c7z-audit-release-gates-evidence-inventory-local.cjs --self-test
+          trap 'rm -f c7z-audit-hold-private-ci.log' EXIT
+          node scripts/73x39j-c18-p0c7z-audit-release-gates-evidence-inventory-local.cjs --plan-only > c7z-audit-hold-private-ci.log
+          grep -Fx 'TRADE_C7Z_G0_G5_AND_EXTERNAL_EVIDENCE_HOLD_CLOSED_LAB_ONLY_NO_DEPLOY' c7z-audit-hold-private-ci.log
