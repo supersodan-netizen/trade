@@ -295,3 +295,4 @@ jobs:
           grep -F '63744a31934cb3dcb1339fd8c0043faee16ec1c4ce3c7e60de032ae97e04d38d' c8l-private-plan-ci.log >/dev/null
           grep -F '"economicCommit":false' c8l-private-plan-ci.log >/dev/null
           grep -F '"externallyCertifiedP0":0' c8l-private-plan-ci.log >/dev/null
+          grep -F 'd2bf4aa999c888cdd9c08907dbdb1bfb2c27f0369c74df4ce2e998a584e345d7' c8l-private-plan-ci.log >/dev/null
