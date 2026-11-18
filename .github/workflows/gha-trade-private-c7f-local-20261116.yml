@@ -376,3 +376,22 @@ jobs:
           grep -F '"sevenWritersPhysicallyIsolated":false' c8q-private-plan-ci.json >/dev/null
           grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c8q-private-plan-ci.json >/dev/null
           grep -F '2d0a57943bf394520063e80b608734e3d958d343541fb3ea8b0117e769ea9830' c8q-private-plan-ci.json >/dev/null
+
+      - name: C8R observed PAPER nine-column IUSQ gap and signed-proof blockers, LAB READONLY
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c8r-iusq-real-schema-readonly-full-rc-lab.cjs
+          node scripts/73x39j-c18-p0c8r-iusq-real-schema-readonly-full-rc-lab.cjs --self-test
+          trap 'rm -f c8r-plan-ci.json' EXIT
+          node scripts/73x39j-c18-p0c8r-iusq-real-schema-readonly-full-rc-lab.cjs --plan-only > c8r-plan-ci.json
+          grep -Fx 'TRADE_C8R_E305_PHYSICAL_PURCHASE_UNAVAILABLE_SIGNED_RECEIPTS_MISSING_W_HOLD' c8r-plan-ci.json
+          grep -F '"paperMovementColumns":9' c8r-plan-ci.json >/dev/null
+          grep -F '"paperPurchases":0' c8r-plan-ci.json >/dev/null
+          grep -F '"paperIusqCashRefs":0' c8r-plan-ci.json >/dev/null
+          grep -F '"matchNamesIds":114' c8r-plan-ci.json >/dev/null
+          grep -F '"externallyCertifiedP0":0' c8r-plan-ci.json >/dev/null
+          grep -F '"economicCommit":false' c8r-plan-ci.json >/dev/null
+          grep -F '"updateContentPayload":null' c8r-plan-ci.json >/dev/null
+          grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c8r-plan-ci.json >/dev/null
+          grep -F 'aa904146f03726f9a6108c941b24289aca2fdede67296fe0db6ac1ecf32ac835' c8r-plan-ci.json >/dev/null
