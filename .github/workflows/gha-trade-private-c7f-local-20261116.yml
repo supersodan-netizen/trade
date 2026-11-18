@@ -326,3 +326,18 @@ jobs:
           grep -F '08176bb8336309264536b5f8e128ff08c0656082aed3c3fcfed4d6514947bcfa' c8n-private-plan-ci.log >/dev/null
           grep -F 'c1c71a6a77996d5b496f31608e819cedbd6ef4979adb86e95f9216c0ff36892d' c8n-private-plan-ci.log >/dev/null
           grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c8n-private-plan-ci.log >/dev/null
+
+      - name: C8O manual shadow PLAN ACK hash chain and crash recovery, private FULL RC MOCK ONLY
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c8o-manual-shadow-commit-ack-chain-fence-full-rc-lab.cjs
+          node scripts/73x39j-c18-p0c8o-manual-shadow-commit-ack-chain-fence-full-rc-lab.cjs --self-test
+          trap 'rm -f c8o-private-plan-ci.log' EXIT
+          node scripts/73x39j-c18-p0c8o-manual-shadow-commit-ack-chain-fence-full-rc-lab.cjs --plan-only > c8o-private-plan-ci.log
+          grep -Fx 'TRADE_C8O_NO_REAL_COMMIT_NO_ACK_CERTIFICATION_NO_ECONOMIC_REPLAY_OR_DEPLOY' c8o-private-plan-ci.log
+          grep -F '"externallyCertifiedP0":0' c8o-private-plan-ci.log >/dev/null
+          grep -F '"economicCommit":false' c8o-private-plan-ci.log >/dev/null
+          grep -F '"ackVerified":false' c8o-private-plan-ci.log >/dev/null
+          grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c8o-private-plan-ci.log >/dev/null
+          grep -F 'c1c71a6a77996d5b496f31608e819cedbd6ef4979adb86e95f9216c0ff36892d' c8o-private-plan-ci.log >/dev/null
