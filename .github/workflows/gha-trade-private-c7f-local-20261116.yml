@@ -324,3 +324,5 @@ jobs:
           grep -F '"externallyCertifiedP0":0' c8n-private-plan-ci.log >/dev/null
           grep -F '"exactlyOnceCertified":false' c8n-private-plan-ci.log >/dev/null
           grep -F '08176bb8336309264536b5f8e128ff08c0656082aed3c3fcfed4d6514947bcfa' c8n-private-plan-ci.log >/dev/null
+          grep -F 'c1c71a6a77996d5b496f31608e819cedbd6ef4979adb86e95f9216c0ff36892d' c8n-private-plan-ci.log >/dev/null
+          grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c8n-private-plan-ci.log >/dev/null
