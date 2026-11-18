@@ -296,3 +296,16 @@ jobs:
           grep -F '"economicCommit":false' c8l-private-plan-ci.log >/dev/null
           grep -F '"externallyCertifiedP0":0' c8l-private-plan-ci.log >/dev/null
           grep -F 'd2bf4aa999c888cdd9c08907dbdb1bfb2c27f0369c74df4ce2e998a584e345d7' c8l-private-plan-ci.log >/dev/null
+
+      - name: C8M IUSQ global read-only double-scan and unsigned receipt evidence, private RC VM MOCK
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c8m-iusq-global-readonly-preflight-receipt-drafts-full-rc-lab.cjs
+          node scripts/73x39j-c18-p0c8m-iusq-global-readonly-preflight-receipt-drafts-full-rc-lab.cjs --self-test
+          trap 'rm -f c8m-private-plan-ci.log' EXIT
+          node scripts/73x39j-c18-p0c8m-iusq-global-readonly-preflight-receipt-drafts-full-rc-lab.cjs --plan-only > c8m-private-plan-ci.log
+          grep -Fx 'TRADE_C8M_IUSQ_AND_MANUAL_ECONOMIC_HOLD_NO_SIGNED_RECEIPTS_NO_DEPLOY' c8m-private-plan-ci.log
+          grep -F '"externallyCertifiedP0":0' c8m-private-plan-ci.log >/dev/null
+          grep -F '"economicWritesAllowed":false' c8m-private-plan-ci.log >/dev/null || grep -F '"receiptSignatureVerified":false' c8m-private-plan-ci.log >/dev/null
+          grep -F 'd2bf4aa999c888cdd9c08907dbdb1bfb2c27f0369c74df4ce2e998a584e345d7' c8m-private-plan-ci.log >/dev/null
