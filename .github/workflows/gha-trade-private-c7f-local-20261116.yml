@@ -344,3 +344,19 @@ jobs:
           grep -F '2d0a57943bf394520063e80b608734e3d958d343541fb3ea8b0117e769ea9830' c8o-private-plan-ci.log >/dev/null
           grep -F '"externalReceiptVerified":false' c8o-private-plan-ci.log >/dev/null
           grep -F '"sevenWritersIsolated":false' c8o-private-plan-ci.log >/dev/null
+
+      - name: C8P signed LAB-only receipt / seven writer CAS protocol, no economic commit or deploy
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c8p-seven-writer-cas-signed-receipt-contract-lab.cjs
+          node scripts/73x39j-c18-p0c8p-seven-writer-cas-signed-receipt-contract-lab.cjs --self-test
+          trap 'rm -f c8p-private-plan-ci.log' EXIT
+          node scripts/73x39j-c18-p0c8p-seven-writer-cas-signed-receipt-contract-lab.cjs --plan-only > c8p-private-plan-ci.log
+          grep -Fx 'TRADE_C8P_NO_EXTERNAL_ACK_NO_PHYSICAL_CAS_NO_ECONOMIC_COMMIT_NO_DEPLOY' c8p-private-plan-ci.log
+          grep -F '"externallyCertifiedP0":0' c8p-private-plan-ci.log >/dev/null
+          grep -F '"economicCommit":false' c8p-private-plan-ci.log >/dev/null
+          grep -F '"realCASCertified":false' c8p-private-plan-ci.log >/dev/null
+          grep -F '"sevenWritersPhysicallyIsolated":false' c8p-private-plan-ci.log >/dev/null
+          grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c8p-private-plan-ci.log >/dev/null
+          grep -F '2d0a57943bf394520063e80b608734e3d958d343541fb3ea8b0117e769ea9830' c8p-private-plan-ci.log >/dev/null
