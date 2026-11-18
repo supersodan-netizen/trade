@@ -309,3 +309,5 @@ jobs:
           grep -F '"externallyCertifiedP0":0' c8m-private-plan-ci.log >/dev/null
           grep -F '"economicWritesAllowed":false' c8m-private-plan-ci.log >/dev/null || grep -F '"receiptSignatureVerified":false' c8m-private-plan-ci.log >/dev/null
           grep -F 'd2bf4aa999c888cdd9c08907dbdb1bfb2c27f0369c74df4ce2e998a584e345d7' c8m-private-plan-ci.log >/dev/null
+          grep -F '08176bb8336309264536b5f8e128ff08c0656082aed3c3fcfed4d6514947bcfa' c8m-private-plan-ci.log >/dev/null
+          grep -F '"receiptSignatureVerified":false' c8m-private-plan-ci.log >/dev/null
