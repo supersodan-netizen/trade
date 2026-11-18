@@ -360,3 +360,19 @@ jobs:
           grep -F '"sevenWritersPhysicallyIsolated":false' c8p-private-plan-ci.log >/dev/null
           grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c8p-private-plan-ci.log >/dev/null
           grep -F '2d0a57943bf394520063e80b608734e3d958d343541fb3ea8b0117e769ea9830' c8p-private-plan-ci.log >/dev/null
+
+      - name: C8Q linked provenance and batched source, tamper, faults, trust and release tests, MOCK ONLY
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c8q-provenance-hold-linked-full-rc-batched-lab.cjs
+          node scripts/73x39j-c18-p0c8q-provenance-hold-linked-full-rc-batched-lab.cjs --self-test
+          trap 'rm -f c8q-private-plan-ci.json' EXIT
+          node scripts/73x39j-c18-p0c8q-provenance-hold-linked-full-rc-batched-lab.cjs --plan-only > c8q-private-plan-ci.json
+          grep -Fx 'TRADE_C8Q_NO_AUTHENTIC_BROKER_SIGNATURE_NO_PHYSICAL_CAS_NO_ECONOMIC_COMMIT_NO_DEPLOY' c8q-private-plan-ci.json
+          grep -F '"externallyCertifiedP0":0' c8q-private-plan-ci.json >/dev/null
+          grep -F '"economicCommit":false' c8q-private-plan-ci.json >/dev/null
+          grep -F '"externalReceiptVerified":false' c8q-private-plan-ci.json >/dev/null
+          grep -F '"sevenWritersPhysicallyIsolated":false' c8q-private-plan-ci.json >/dev/null
+          grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c8q-private-plan-ci.json >/dev/null
+          grep -F '2d0a57943bf394520063e80b608734e3d958d343541fb3ea8b0117e769ea9830' c8q-private-plan-ci.json >/dev/null
