@@ -311,3 +311,16 @@ jobs:
           grep -F 'd2bf4aa999c888cdd9c08907dbdb1bfb2c27f0369c74df4ce2e998a584e345d7' c8m-private-plan-ci.log >/dev/null
           grep -F '08176bb8336309264536b5f8e128ff08c0656082aed3c3fcfed4d6514947bcfa' c8m-private-plan-ci.log >/dev/null
           grep -F '"receiptSignatureVerified":false' c8m-private-plan-ci.log >/dev/null
+
+      - name: C8N manual journal four-store recovery forensic triage, FULL RC V8 MOCK ONLY
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c8n-manual-recovery-digest-triage-full-rc-lab.cjs
+          node scripts/73x39j-c18-p0c8n-manual-recovery-digest-triage-full-rc-lab.cjs --self-test
+          trap 'rm -f c8n-private-plan-ci.log' EXIT
+          node scripts/73x39j-c18-p0c8n-manual-recovery-digest-triage-full-rc-lab.cjs --plan-only > c8n-private-plan-ci.log
+          grep -Fx 'TRADE_C8N_MANUAL_IUSQ_HOLD_NO_REPLAY_NO_COMMIT_NO_DEPLOY' c8n-private-plan-ci.log
+          grep -F '"externallyCertifiedP0":0' c8n-private-plan-ci.log >/dev/null
+          grep -F '"exactlyOnceCertified":false' c8n-private-plan-ci.log >/dev/null
+          grep -F '08176bb8336309264536b5f8e128ff08c0656082aed3c3fcfed4d6514947bcfa' c8n-private-plan-ci.log >/dev/null
