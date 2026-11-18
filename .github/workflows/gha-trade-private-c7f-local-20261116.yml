@@ -293,3 +293,5 @@ jobs:
           node scripts/73x39j-c18-p0c8l-manual-prepared-journal-replay-hold-full-rc-lab.cjs --plan-only > c8l-private-plan-ci.log
           grep -Fx 'TRADE_C8L_PREPARED_ONLY_MANUAL_AND_IUSQ_ECONOMIC_HOLD_NO_DEPLOY' c8l-private-plan-ci.log
           grep -F '63744a31934cb3dcb1339fd8c0043faee16ec1c4ce3c7e60de032ae97e04d38d' c8l-private-plan-ci.log >/dev/null
+          grep -F '"economicCommit":false' c8l-private-plan-ci.log >/dev/null
+          grep -F '"externallyCertifiedP0":0' c8l-private-plan-ci.log >/dev/null
