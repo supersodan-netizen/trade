@@ -395,3 +395,22 @@ jobs:
           grep -F '"updateContentPayload":null' c8r-plan-ci.json >/dev/null
           grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c8r-plan-ci.json >/dev/null
           grep -F 'aa904146f03726f9a6108c941b24289aca2fdede67296fe0db6ac1ecf32ac835' c8r-plan-ci.json >/dev/null
+
+      - name: C8S E19 legacy fee and repurchase attribution, no fake reconciliation or 2027 release
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c8s-e19-legacy-commission-repurchase-attribution-full-rc-lab.cjs
+          node scripts/73x39j-c18-p0c8s-e19-legacy-commission-repurchase-attribution-full-rc-lab.cjs --self-test
+          trap 'rm -f c8s-private-plan-ci.json' EXIT
+          node scripts/73x39j-c18-p0c8s-e19-legacy-commission-repurchase-attribution-full-rc-lab.cjs --plan-only > c8s-private-plan-ci.json
+          grep -Fx 'TRADE_C8S_GROSS_NOT_RESIDUAL_NO_FAKE_CLOSURE_NO_2027_RESET_NO_GAS_NO_LIVE' c8s-private-plan-ci.json
+          grep -F '"legacyGrossDeltaCents":-3206' c8s-private-plan-ci.json >/dev/null
+          grep -F '"grossIsNotProvenResidual":true' c8s-private-plan-ci.json >/dev/null
+          grep -F '"accountingRemainingResidualCents":null' c8s-private-plan-ci.json >/dev/null
+          grep -F '"e19AccountingReconciled":false' c8s-private-plan-ci.json >/dev/null
+          grep -F '"reset2027Authorized":false' c8s-private-plan-ci.json >/dev/null
+          grep -F '"externallyCertifiedP0":0' c8s-private-plan-ci.json >/dev/null
+          grep -F '"economicWritesAllowed":false' c8s-private-plan-ci.json >/dev/null
+          grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c8s-private-plan-ci.json >/dev/null
+          grep -F '34846aa56d1c34c80fcc8d740e5bb0f166d0ce85ef86335f273c390358385fb3' c8s-private-plan-ci.json >/dev/null
