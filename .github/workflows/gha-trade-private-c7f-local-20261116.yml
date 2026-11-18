@@ -281,3 +281,4 @@ jobs:
           trap 'rm -f c8k-private-plan-ci.log' EXIT
           node scripts/73x39j-c18-p0c8k-manual-journal-write-fence-iusq-preflight-full-rc-lab.cjs --plan-only > c8k-private-plan-ci.log
           grep -Fx 'TRADE_C8K_MANUAL_IUSQ_WRITES_HOLD_NO_ATOMIC_JOURNAL_NO_DEPLOY' c8k-private-plan-ci.log
+          grep -F '63744a31934cb3dcb1339fd8c0043faee16ec1c4ce3c7e60de032ae97e04d38d' c8k-private-plan-ci.log >/dev/null
