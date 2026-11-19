@@ -63,6 +63,23 @@ jobs:
           grep -F '"PAPER_DEPLOY_AUTHORIZED":false' c9b-public-safety-plan.json >/dev/null
           grep -F '"updateContentPayload":null' c9b-public-safety-plan.json >/dev/null
           grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c9b-public-safety-plan.json >/dev/null
+      - name: C9Q source triage 209 candidates and direct economic primitive fences, NONDEPLOYABLE
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c9q-writer-candidate-triage-direct-financial-sink-fence-lab.cjs
+          node scripts/73x39j-c18-p0c9q-writer-candidate-triage-direct-financial-sink-fence-lab.cjs --self-test
+          trap 'rm -f c9q-lexical-classification.json' EXIT
+          node scripts/73x39j-c18-p0c9q-writer-candidate-triage-direct-financial-sink-fence-lab.cjs --plan-only > c9q-lexical-classification.json
+          grep -F '"c9pBaselineCandidates":209' c9q-lexical-classification.json >/dev/null
+          grep -F '"additionalDirectPrimitiveOwnersProtected":6' c9q-lexical-classification.json >/dev/null
+          grep -F '"nonExhaustive":true' c9q-lexical-classification.json >/dev/null
+          grep -F '"independentPhysicalWritersCertified":0' c9q-lexical-classification.json >/dev/null
+          grep -F '"realStopLivenessCertified":false' c9q-lexical-classification.json >/dev/null
+          grep -F '"noRealCASBinding":true' c9q-lexical-classification.json >/dev/null
+          grep -F '"safeForPAPER":false' c9q-lexical-classification.json >/dev/null
+          grep -F '"updateContentPayload":null' c9q-lexical-classification.json >/dev/null
+          grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c9q-lexical-classification.json >/dev/null
       - name: C9P nine economic/forensic source owners denied and non-exhaustive full RC writer census, RAM ONLY
         run: |
           set -euo pipefail
