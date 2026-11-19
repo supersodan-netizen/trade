@@ -453,3 +453,21 @@ jobs:
           grep -F '"formallyCertifiedP0":0' c8t-plan-ci.json >/dev/null
           grep -F '"status":"HOLD_EXTERNAL_EVIDENCE"' c8t-plan-ci.json >/dev/null
           grep -F '9c99049ff32e6834338f65cfcfe662f84edc65f2c5e9232f6d7117301effb951' c8t-plan-ci.json >/dev/null
+
+      - name: C8W journal immutable identity and phase anti-rewind on FULL RC, LAB ONLY
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c8w-journal-identity-phase-aba-fence-full-rc-lab.cjs
+          node scripts/73x39j-c18-p0c8w-journal-identity-phase-aba-fence-full-rc-lab.cjs --self-test
+          trap 'rm -f c8w-plan-ci.json' EXIT
+          node scripts/73x39j-c18-p0c8w-journal-identity-phase-aba-fence-full-rc-lab.cjs --plan-only > c8w-plan-ci.json
+          grep -Fx 'TRADE_C8W_R203_E303_NO_REAL_CAS_NO_BROKER_NO_GAS_NO_DEPLOY' c8w-plan-ci.json
+          grep -F '"changedOwnerCount":1' c8w-plan-ci.json >/dev/null
+          grep -F '"protectedUnrelatedOwners":12' c8w-plan-ci.json >/dev/null
+          grep -F '"externallyCertifiedP0":0' c8w-plan-ci.json >/dev/null
+          grep -F '"realCASCertified":false' c8w-plan-ci.json >/dev/null
+          grep -F '"PAPER_DEPLOY_AUTHORIZED":false' c8w-plan-ci.json >/dev/null
+          grep -F '"fullBundleReady":false' c8w-plan-ci.json >/dev/null
+          grep -F '"updateContentPayload":null' c8w-plan-ci.json >/dev/null
+          grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c8w-plan-ci.json >/dev/null
