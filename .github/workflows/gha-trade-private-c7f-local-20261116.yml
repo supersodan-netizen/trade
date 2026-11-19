@@ -46,6 +46,23 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '22'
+      - name: C9A common journal reader, 17 real callsites and first-alert preservation, V8 ONLY
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c9a-journal-reader-all-callers-alert-fence-lab.cjs
+          node scripts/73x39j-c18-p0c9a-journal-reader-all-callers-alert-fence-lab.cjs --self-test
+          trap 'rm -f c9a-readonly-plan.json' EXIT
+          node scripts/73x39j-c18-p0c9a-journal-reader-all-callers-alert-fence-lab.cjs --plan-only > c9a-readonly-plan.json
+          grep -Fx 'TRADE_C9A_NO_GAS_NO_BROKER_NO_CAS_NO_DEPLOY' c9a-readonly-plan.json
+          grep -F '"directCallsiteCount":17' c9a-readonly-plan.json >/dev/null
+          grep -F '"callerOwnerCount":15' c9a-readonly-plan.json >/dev/null
+          grep -F '"sevenWritersCertified":false' c9a-readonly-plan.json >/dev/null
+          grep -F '"externallyCertifiedP0":0' c9a-readonly-plan.json >/dev/null
+          grep -F '"PAPER_DEPLOY_AUTHORIZED":false' c9a-readonly-plan.json >/dev/null
+          grep -F '"fullBundleReady":false' c9a-readonly-plan.json >/dev/null
+          grep -F '"updateContentPayload":null' c9a-readonly-plan.json >/dev/null
+          grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c9a-readonly-plan.json >/dev/null
       - name: C8Z authentic caller + before/after EXECUTING faults + second-worker ScriptLock MOCK ONLY
         run: |
           set -euo pipefail
