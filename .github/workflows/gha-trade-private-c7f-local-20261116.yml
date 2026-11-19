@@ -454,6 +454,7 @@ jobs:
           grep -F '"status":"HOLD_EXTERNAL_EVIDENCE"' c8t-plan-ci.json >/dev/null
           grep -F '9c99049ff32e6834338f65cfcfe662f84edc65f2c5e9232f6d7117301effb951' c8t-plan-ci.json >/dev/null
 
+      # C8W includes the authentic PREPARED -> EXECUTING -> LIQ/POS/OP progression.
       - name: C8W journal immutable identity and phase anti-rewind on FULL RC, LAB ONLY
         run: |
           set -euo pipefail
