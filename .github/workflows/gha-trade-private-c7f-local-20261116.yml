@@ -63,6 +63,24 @@ jobs:
           grep -F '"PAPER_DEPLOY_AUTHORIZED":false' c9b-public-safety-plan.json >/dev/null
           grep -F '"updateContentPayload":null' c9b-public-safety-plan.json >/dev/null
           grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c9b-public-safety-plan.json >/dev/null
+      - name: C9N auditor priority A source-linked technical qualification, FOUR P0 LOCAL ONLY
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c9n-priority-a-auditor-acceptance-gate-local.cjs
+          node scripts/73x39j-c18-p0c9n-priority-a-auditor-acceptance-gate-local.cjs --self-test
+          trap 'rm -f c9n-acceptance-gate-plan.json' EXIT
+          node scripts/73x39j-c18-p0c9n-priority-a-auditor-acceptance-gate-local.cjs --plan-only > c9n-acceptance-gate-plan.json
+          grep -F '"laboratoryTechnicalEvidenceReady":4' c9n-acceptance-gate-plan.json >/dev/null
+          grep -F '"physicalAuditorCertified":0' c9n-acceptance-gate-plan.json >/dev/null
+          grep -F '"firstEvidencePreserved":false' c9n-acceptance-gate-plan.json >/dev/null
+          grep -F '"atomicCASCertified":false' c9n-acceptance-gate-plan.json >/dev/null
+          grep -F '"writerClassesCertified":0' c9n-acceptance-gate-plan.json >/dev/null
+          grep -F '"extCertified":0' c9n-acceptance-gate-plan.json >/dev/null
+          grep -F '"ext12Approved":false' c9n-acceptance-gate-plan.json >/dev/null
+          grep -F '"PAPER_DEPLOY_AUTHORIZED":false' c9n-acceptance-gate-plan.json >/dev/null
+          grep -F '"updateContentPayload":null' c9n-acceptance-gate-plan.json >/dev/null
+          grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c9n-acceptance-gate-plan.json >/dev/null
       - name: C9M CLEAR_UNCERTAIN only, common journal reader source fix in V8 RAM, NO GAS
         run: |
           set -euo pipefail
