@@ -415,6 +415,24 @@ jobs:
           grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c8s-private-plan-ci.json >/dev/null
           grep -F '34846aa56d1c34c80fcc8d740e5bb0f166d0ce85ef86335f273c390358385fb3' c8s-private-plan-ci.json >/dev/null
 
+      - name: C8U source-level C8M real 9-column IUSQ correction, manual writers still fenced
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c8u-c8m-nine-column-source-correction-readonly-lab.cjs
+          node scripts/73x39j-c18-p0c8u-c8m-nine-column-source-correction-readonly-lab.cjs --self-test
+          trap 'rm -f c8u-private-plan-ci.json' EXIT
+          node scripts/73x39j-c18-p0c8u-c8m-nine-column-source-correction-readonly-lab.cjs --plan-only > c8u-private-plan-ci.json
+          grep -Fx 'TRADE_C8U_NO_EXTERNAL_RECEIPT_NO_PHYSICAL_CAS_NO_ECONOMIC_COMMIT_NO_DEPLOY' c8u-private-plan-ci.json
+          grep -F '"changedOwnerCount":1' c8u-private-plan-ci.json >/dev/null
+          grep -F '"physicalPaperColumnsObserved":9' c8u-private-plan-ci.json >/dev/null
+          grep -F '"externallyCertifiedP0":0' c8u-private-plan-ci.json >/dev/null
+          grep -F '"PAPER_DEPLOY_AUTHORIZED":false' c8u-private-plan-ci.json >/dev/null
+          grep -F '"fullBundleReady":false' c8u-private-plan-ci.json >/dev/null
+          grep -F '"updateContentPayload":null' c8u-private-plan-ci.json >/dev/null
+          grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c8u-private-plan-ci.json >/dev/null
+          grep -F '9c99049ff32e6834338f65cfcfe662f84edc65f2c5e9232f6d7117301effb951' c8u-private-plan-ci.json >/dev/null
+
       - name: C8T E19 73R-73S historical two-PAPER readback; 7 linked components, HOLD
         run: |
           set -euo pipefail
