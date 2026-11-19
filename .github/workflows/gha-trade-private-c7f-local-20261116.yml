@@ -63,6 +63,25 @@ jobs:
           grep -F '"PAPER_DEPLOY_AUTHORIZED":false' c9b-public-safety-plan.json >/dev/null
           grep -F '"updateContentPayload":null' c9b-public-safety-plan.json >/dev/null
           grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c9b-public-safety-plan.json >/dev/null
+      - name: C9P nine economic/forensic source owners denied and non-exhaustive full RC writer census, RAM ONLY
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c9p-failclosed-writer-port-full-rc-census-lab.cjs
+          node scripts/73x39j-c18-p0c9p-failclosed-writer-port-full-rc-census-lab.cjs --self-test
+          trap 'rm -f c9p-writer-port-plan.json' EXIT
+          node scripts/73x39j-c18-p0c9p-failclosed-writer-port-full-rc-census-lab.cjs --plan-only > c9p-writer-port-plan.json
+          grep -F '"modifiedOwnerCount":9' c9p-writer-port-plan.json >/dev/null
+          grep -F '"portAllowsEconomicWrite":false' c9p-writer-port-plan.json >/dev/null
+          grep -F '"portConnectedToC9OSqlite":false' c9p-writer-port-plan.json >/dev/null
+          grep -F '"portConnectedToGAS":false' c9p-writer-port-plan.json >/dev/null
+          grep -F '"nonExhaustive":true' c9p-writer-port-plan.json >/dev/null
+          grep -F '"physicalWriterClassesCertified":0' c9p-writer-port-plan.json >/dev/null
+          grep -F '"SAFE_FOR_PRODUCTION":false' c9p-writer-port-plan.json >/dev/null
+          grep -F '"retainedProtectiveSellService":false' c9p-writer-port-plan.json >/dev/null
+          grep -F '"PAPER_DEPLOY_AUTHORIZED":false' c9p-writer-port-plan.json >/dev/null
+          grep -F '"updateContentPayload":null' c9p-writer-port-plan.json >/dev/null
+          grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c9p-writer-port-plan.json >/dev/null
       - name: C9O REAL SQLite WAL CAS lab with eight OS processes and crash recovery, NO GAS
         run: |
           set -euo pipefail
