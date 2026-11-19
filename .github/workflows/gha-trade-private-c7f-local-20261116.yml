@@ -63,6 +63,25 @@ jobs:
           grep -F '"PAPER_DEPLOY_AUTHORIZED":false' c9b-public-safety-plan.json >/dev/null
           grep -F '"updateContentPayload":null' c9b-public-safety-plan.json >/dev/null
           grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c9b-public-safety-plan.json >/dev/null
+      - name: C9O REAL SQLite WAL CAS lab with eight OS processes and crash recovery, NO GAS
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c9o-sqlite-atomic-authority-fencing-local.cjs
+          node scripts/73x39j-c18-p0c9o-sqlite-atomic-authority-fencing-local.cjs --self-test
+          trap 'rm -f c9o-local-cas-plan.json' EXIT
+          node scripts/73x39j-c18-p0c9o-sqlite-atomic-authority-fencing-local.cjs --plan-only > c9o-local-cas-plan.json
+          grep -Fx 'TRADE_C9O_PHYSICAL_CAS_NOT_CERTIFIED_WRITERS_0_OF_7_W_HOLD' c9o-local-cas-plan.json
+          grep -F '"claimWinners":1' c9o-local-cas-plan.json >/dev/null
+          grep -F '"claimLosers":7' c9o-local-cas-plan.json >/dev/null
+          grep -F '"crashBeforeLedgerAtomicRollback":true' c9o-local-cas-plan.json >/dev/null
+          grep -F '"sourceIntegratedIntoGAS":false' c9o-local-cas-plan.json >/dev/null
+          grep -F '"realGASPhysicalCASCertified":false' c9o-local-cas-plan.json >/dev/null
+          grep -F '"externalWritersIsolated":false' c9o-local-cas-plan.json >/dev/null
+          grep -F '"writerClassesCertified":0' c9o-local-cas-plan.json >/dev/null
+          grep -F '"PAPER_DEPLOY_AUTHORIZED":false' c9o-local-cas-plan.json >/dev/null
+          grep -F '"updateContentPayload":null' c9o-local-cas-plan.json >/dev/null
+          grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c9o-local-cas-plan.json >/dev/null
       - name: C9N auditor priority A source-linked technical qualification, FOUR P0 LOCAL ONLY
         run: |
           set -euo pipefail
