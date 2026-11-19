@@ -63,6 +63,22 @@ jobs:
           grep -F '"PAPER_DEPLOY_AUTHORIZED":false' c9b-public-safety-plan.json >/dev/null
           grep -F '"updateContentPayload":null' c9b-public-safety-plan.json >/dev/null
           grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c9b-public-safety-plan.json >/dev/null
+      - name: C9M CLEAR_UNCERTAIN only, common journal reader source fix in V8 RAM, NO GAS
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c9m-clear-uncertain-common-journal-read-failclosed-full-rc-lab.cjs
+          node scripts/73x39j-c18-p0c9m-clear-uncertain-common-journal-read-failclosed-full-rc-lab.cjs --self-test
+          trap 'rm -f c9m-safety-plan.json' EXIT
+          node scripts/73x39j-c18-p0c9m-clear-uncertain-common-journal-read-failclosed-full-rc-lab.cjs --plan-only > c9m-safety-plan.json
+          grep -Fx 'TRADE_C9M_NO_GAS_NO_W_NO_REAL_CAS_NO_DEPLOY' c9m-safety-plan.json
+          grep -F '"clearOnlyFailClosed":true' c9m-safety-plan.json >/dev/null
+          grep -F '"atomicCAS":false' c9m-safety-plan.json >/dev/null
+          grep -F '"externalWriterIsolationCertified":false' c9m-safety-plan.json >/dev/null
+          grep -F '"PAPER_DEPLOY_AUTHORIZED":false' c9m-safety-plan.json >/dev/null
+          grep -F '"fullBundleReady":false' c9m-safety-plan.json >/dev/null
+          grep -F '"updateContentPayload":null' c9m-safety-plan.json >/dev/null
+          grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c9m-safety-plan.json >/dev/null
       - name: C9A common journal reader, 17 real callsites and first-alert preservation, V8 ONLY
         run: |
           set -euo pipefail
