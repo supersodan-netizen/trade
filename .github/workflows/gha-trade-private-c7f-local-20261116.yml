@@ -63,6 +63,23 @@ jobs:
           grep -F '"PAPER_DEPLOY_AUTHORIZED":false' c9b-public-safety-plan.json >/dev/null
           grep -F '"updateContentPayload":null' c9b-public-safety-plan.json >/dev/null
           grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c9b-public-safety-plan.json >/dev/null
+      - name: C9R genuine STOP evaluator read-only signal under financial authority HOLD, VM only
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c9r-stop-signal-only-while-economic-writer-held-full-rc-lab.cjs
+          node scripts/73x39j-c18-p0c9r-stop-signal-only-while-economic-writer-held-full-rc-lab.cjs --self-test
+          trap 'rm -f c9r-stop-observer-plan.json' EXIT
+          node scripts/73x39j-c18-p0c9r-stop-signal-only-while-economic-writer-held-full-rc-lab.cjs --plan-only > c9r-stop-observer-plan.json
+          grep -F '"guardedFinanceOwners":15' c9r-stop-observer-plan.json >/dev/null
+          grep -F '"signalDurablyCertified":false' c9r-stop-observer-plan.json >/dev/null
+          grep -F '"stopPhysicalLivenessCertified":false' c9r-stop-observer-plan.json >/dev/null
+          grep -F '"realGasAuthorityConnected":false' c9r-stop-observer-plan.json >/dev/null
+          grep -F '"physical7WritersCertified":0' c9r-stop-observer-plan.json >/dev/null
+          grep -F '"safeToDeploy":false' c9r-stop-observer-plan.json >/dev/null
+          grep -F '"updateContentPayload":null' c9r-stop-observer-plan.json >/dev/null
+          grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c9r-stop-observer-plan.json >/dev/null
+          grep -F '"noLiveBrokerAuthorityOrReceipt":true' c9r-stop-observer-plan.json >/dev/null
       - name: C9Q source triage 209 candidates and direct economic primitive fences, NONDEPLOYABLE
         run: |
           set -euo pipefail
