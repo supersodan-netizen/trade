@@ -46,7 +46,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - name: C8Z genuine ejecutarAprobadas caller with crash cutpoints, ScriptLock VM MOCK ONLY
+      - name: C8Z authentic caller + before/after EXECUTING faults + second-worker ScriptLock MOCK ONLY
         run: |
           set -euo pipefail
           cd private-trade
