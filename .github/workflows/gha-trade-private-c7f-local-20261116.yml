@@ -46,6 +46,23 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '22'
+      - name: C8Z genuine ejecutarAprobadas caller with crash cutpoints, ScriptLock VM MOCK ONLY
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c8z-authentic-executor-crash-transition-integrated-vm-lab.cjs
+          node scripts/73x39j-c18-p0c8z-authentic-executor-crash-transition-integrated-vm-lab.cjs --self-test
+          trap 'rm -f c8z-plan.json' EXIT
+          node scripts/73x39j-c18-p0c8z-authentic-executor-crash-transition-integrated-vm-lab.cjs --plan-only > c8z-plan.json
+          grep -Fx 'TRADE_C8Z_NO_GAS_NO_BROKER_NO_CAS_NO_DEPLOY' c8z-plan.json
+          grep -F '"realCallerExecutedInVM":true' c8z-plan.json >/dev/null
+          grep -F '"physicalScriptLock":false' c8z-plan.json >/dev/null
+          grep -F '"sevenWritersCertified":false' c8z-plan.json >/dev/null
+          grep -F '"externallyCertifiedP0":0' c8z-plan.json >/dev/null
+          grep -F '"PAPER_DEPLOY_AUTHORIZED":false' c8z-plan.json >/dev/null
+          grep -F '"fullBundleReady":false' c8z-plan.json >/dev/null
+          grep -F '"updateContentPayload":null' c8z-plan.json >/dev/null
+          grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c8z-plan.json >/dev/null
       - name: C8Y PREPARED EXECUTING crash and forensic alert reentry, private full RC VM ONLY
         run: |
           set -euo pipefail
