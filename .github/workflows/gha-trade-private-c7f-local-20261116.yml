@@ -46,6 +46,24 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '22'
+      - name: C8X nominal EXECUTING precommit and immutable journal readback fail-closed, FULL RC MOCK ONLY
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c8x-executing-prepared-nominal-commit-fence-full-rc-lab.cjs
+          node scripts/73x39j-c18-p0c8x-executing-prepared-nominal-commit-fence-full-rc-lab.cjs --self-test
+          trap 'rm -f c8x-plan-ci.json' EXIT
+          node scripts/73x39j-c18-p0c8x-executing-prepared-nominal-commit-fence-full-rc-lab.cjs --plan-only > c8x-plan-ci.json
+          grep -Fx 'TRADE_C8X_NO_REAL_CAS_NO_BROKER_NO_GAS_NO_DEPLOY' c8x-plan-ci.json
+          grep -F '"changedOwnerCount":1' c8x-plan-ci.json >/dev/null
+          grep -F '"unchangedOwners":13' c8x-plan-ci.json >/dev/null
+          grep -F '"externallyCertifiedP0":0' c8x-plan-ci.json >/dev/null
+          grep -F '"realCASCertified":false' c8x-plan-ci.json >/dev/null
+          grep -F '"PAPER_DEPLOY_AUTHORIZED":false' c8x-plan-ci.json >/dev/null
+          grep -F '"fullBundleReady":false' c8x-plan-ci.json >/dev/null
+          grep -F '"updateContentPayload":null' c8x-plan-ci.json >/dev/null
+          grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c8x-plan-ci.json >/dev/null
+
       - name: Execute C7F local test workflow with public logs suppressed
         run: node public-runner/scripts/run-c7f-private-local-only.mjs private-trade
       - name: C7O offline diff plan only, fail closed and NO GAS deployment
@@ -472,21 +490,3 @@ jobs:
           grep -F '"fullBundleReady":false' c8w-plan-ci.json >/dev/null
           grep -F '"updateContentPayload":null' c8w-plan-ci.json >/dev/null
           grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c8w-plan-ci.json >/dev/null
-
-      - name: C8X nominal EXECUTING precommit and immutable journal readback fail-closed, FULL RC MOCK ONLY
-        run: |
-          set -euo pipefail
-          cd private-trade
-          node --check scripts/73x39j-c18-p0c8x-executing-prepared-nominal-commit-fence-full-rc-lab.cjs
-          node scripts/73x39j-c18-p0c8x-executing-prepared-nominal-commit-fence-full-rc-lab.cjs --self-test
-          trap 'rm -f c8x-plan-ci.json' EXIT
-          node scripts/73x39j-c18-p0c8x-executing-prepared-nominal-commit-fence-full-rc-lab.cjs --plan-only > c8x-plan-ci.json
-          grep -Fx 'TRADE_C8X_NO_REAL_CAS_NO_BROKER_NO_GAS_NO_DEPLOY' c8x-plan-ci.json
-          grep -F '"changedOwnerCount":1' c8x-plan-ci.json >/dev/null
-          grep -F '"unchangedOwners":13' c8x-plan-ci.json >/dev/null
-          grep -F '"externallyCertifiedP0":0' c8x-plan-ci.json >/dev/null
-          grep -F '"realCASCertified":false' c8x-plan-ci.json >/dev/null
-          grep -F '"PAPER_DEPLOY_AUTHORIZED":false' c8x-plan-ci.json >/dev/null
-          grep -F '"fullBundleReady":false' c8x-plan-ci.json >/dev/null
-          grep -F '"updateContentPayload":null' c8x-plan-ci.json >/dev/null
-          grep -F '"W":"HOLD_EXTERNAL_EVIDENCE"' c8x-plan-ci.json >/dev/null
