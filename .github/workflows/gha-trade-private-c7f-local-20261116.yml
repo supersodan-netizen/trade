@@ -46,6 +46,25 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '22'
+      - name: C9S/F2 GAS read-only probe contract in V8 MOCK ONLY
+        run: |
+          set -euo pipefail
+          cd private-trade
+          node --check scripts/73x39j-c18-p0c9s-f2-readonly-gas-contract-local.cjs
+          trap 'rm -f c9s-f2-gate-ci.json' EXIT
+          node scripts/73x39j-c18-p0c9s-f2-readonly-gas-contract-local.cjs > c9s-f2-gate-ci.json
+          node -e '
+            const fs=require("fs");
+            const r=JSON.parse(fs.readFileSync("c9s-f2-gate-ci.json","utf8"));
+            if(r.phase!=="P0-C9S/F2" ||
+               r.executionType!=="NODE_V8_MOCK_ONLY" ||
+               r.sourceSHA256!=="2a6e719d7b811bc85036c56ee8974ae327f0a747224033d390699d35d91d0d94" ||
+               r.assertions!==14 || r.passed!==14 ||
+               r.certifiesGasRuntime!==false || r.certifiesP0!==false ||
+               r.physicalWrites!==0) process.exit(1);
+            console.log("TRADE_C9S_F2_14_MOCK_CHECKS_PASS_NO_GAS_NO_PHYSICAL_CERTIFICATION");
+          '
+
       - name: C9B actual metadata provenance and late CAS race reproduction, MOCK ONLY
         run: |
           set -euo pipefail
