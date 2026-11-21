@@ -1,0 +1,1 @@
+Disposable read-only CI wrapper, no source or artifact publication. No merge, deploy, GAS or W. Main and its workflows are unchanged.

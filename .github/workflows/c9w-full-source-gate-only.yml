@@ -1,0 +1,58 @@
+name: TRADE C9W FULL source gate isolated only
+on:
+  push:
+    branches: ['audit/c9w-full-source-gate-only']
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.repository == 'supersodan-netizen/trade'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Pinned read-only source checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: 36ec5545a504f2a8031c4d1754d1fc36675e8f63
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-source
+      - name: Pinned read-only gate checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: b972bcc427d34c077a8cccb2aca9307f45427d91
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-gate
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Source-only gate with network disabled and sanitized output
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C private-source rev-parse HEAD)" = 36ec5545a504f2a8031c4d1754d1fc36675e8f63
+          test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
+          test "$(git -C private-gate rev-parse HEAD)" = b972bcc427d34c077a8cccb2aca9307f45427d91
+          echo "8ce9f74e3e6f5d178870a0ac129b99a9a8cf94a9ada62b67e9e8de4a16942084  private-gate/integration/verify_full_rc_source.cjs" | sha256sum -c -
+          tmp=$(mktemp -d)
+          trap 'rm -rf "$tmp"' EXIT
+          mkdir "$tmp/src" "$tmp/home"
+          git -C private-source archive HEAD candidate scripts docs tests lab | tar -x -C "$tmp/src"
+          test -z "$(find "$tmp/src" -type f \( -name '.clasp*' -o -name '.env*' \) -print -quit)"
+          nodebin=$(command -v node)
+          "$nodebin" -v
+          if ! sudo unshare --net -- setpriv --reuid="$(id -u)" --regid="$(id -g)" --clear-groups env -i PATH=/usr/bin:/bin HOME="$tmp/home" "$nodebin" "$PWD/private-gate/integration/verify_full_rc_source.cjs" "$tmp/src" >"$tmp/gate.json" 2>"$tmp/gate.err"; then
+            echo C9W_FULL_GATE_FAILED_NO_SOURCE_OR_ERROR_CONTENT_PUBLISHED
+            exit 2
+          fi
+          node -e 'const a=require("node:assert/strict"),fs=require("node:fs");const r=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));a.equal(r.scope,"OFFLINE_FULL_RC_SOURCE_ONLY");a.equal(r.coreSha256,"b4415d13b6efcc0036a5220edb9a3f388170a41924031dbd5516b02278aac25b");a.equal(r.rcSha256,"f0b0da6f5a7dbac4ae57ee2ecb181a5b59324edff2407fe8f4af40ea52a765ab");a.equal(r.functions.length,9);a.equal(r.manifest.preservedCallsites,20);a.equal(r.manifest.preservedCallers,17);a.equal(r.manifest.rollbackByteExact,true);a.equal(r.manifest.syntaxV8,true);a.equal(r.gasExecuted,false);a.equal(r.economicWrites,0);a.equal(r.integrated,false);a.equal(r.manifest.W,"HOLD_EXTERNAL_EVIDENCE");console.log(JSON.stringify({scope:r.scope,coreSha256:r.coreSha256,rcSha256:r.rcSha256,owners:r.functions.length,callsites:r.manifest.preservedCallsites,callerOwners:r.manifest.preservedCallers,rollbackByteExact:true,syntaxV8:true,gasExecuted:false,economicWrites:0,integrated:false,W:r.manifest.W}));' "$tmp/gate.json"
+          echo C9W_FULL_SOURCE_GATE_POSITIVE_LOCAL_ONLY_NO_GAS_NO_W_NO_DEPLOY
