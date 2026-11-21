@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: 055cd03a0c60b35283a350dbd858557a8855a080
+          ref: 0b11816d490b1f603e67fc99c52be706d7dae33e
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
@@ -40,8 +40,8 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git -C private-source rev-parse HEAD)" = 36ec5545a504f2a8031c4d1754d1fc36675e8f63
-          test "$(git -C private-gate rev-parse HEAD)" = 055cd03a0c60b35283a350dbd858557a8855a080
-          test "$(git -C private-gate rev-parse HEAD:integration/tx2a.cjs)" = 5138876818dbbcf4cf75d22d3328526284488c6d
+          test "$(git -C private-gate rev-parse HEAD)" = 0b11816d490b1f603e67fc99c52be706d7dae33e
+          test "$(git -C private-gate rev-parse HEAD:integration/tx2a.cjs)" = a3a2f99184cbd1ed0126243f571b94fa05a92fa7
           test "$(git -C private-gate rev-parse HEAD:integration/authority_c9w_tx1_lab.cjs)" = 9cc7ce911fd5a2c1aec9a901dc77ba8af8d7347b
           test "$(git -C private-gate rev-parse HEAD:integration/d9_boundary.cjs)" = ddeef2cebe7254bbd5d1cdcbd9e53479475f68ea
           tmp=$(mktemp -d)
@@ -59,6 +59,6 @@ jobs:
             node -e 'const s=require("node:fs").readFileSync(process.argv[1],"utf8");const e=s.split("\n").find(x=>/^(Error|TypeError|ReferenceError|SyntaxError|AssertionError|GuardError):/.test(x));const safe={kind:e?.split(":")[0]||"UNKNOWN",known:(e?.match(/^[A-Za-z]+: ((?:TX2A_|TX1_|D9_|C9M_|C8[A-Z]_|C8Z_|ORDER_|C9W_|C5W_|SQLITE_)[A-Z0-9_]+)$/)||[])[1]||null,frames:[...s.matchAll(/(?:tx2a|authority_c9w_tx1_lab|d9_boundary)\.cjs:(\d+):(\d+)/g)].slice(0,6).map(m=>[+m[1],+m[2]]),sourceBodyMissing:/FUNCTION_NOT_FOUND|SOURCE_OWNER_NOT_FOUND|function not found|no encontrada|funcion no encontrada/i.test(s),syntax:/SyntaxError/.test(s)};console.log(JSON.stringify(safe));' "$tmp/e"
             exit 2
           fi
-          node -e 'const a=require("node:assert/strict"), fs=require("node:fs");const r=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));a.equal(r.scope,"TX2A_LAB_AUTHENTIC_BUY_HANDOFF");a.equal(r.parentSha256,"f0b0da6f5a7dbac4ae57ee2ecb181a5b59324edff2407fe8f4af40ea52a765ab");a.match(r.overlaySha256,/^[a-f0-9]{64}$/);a.equal(r.physicalWrites,0);a.equal(r.projectionComplete,false);a.equal(r.fullGasBoot,false);a.equal(r.certifiesP0,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");const fields=["returnedFalse","exception","raw","port","prepare","commit","readbacks","queueReads","balanced","cashCents","feesCents","positions","plan","reserve","claim","commits","bookOK","opsUnchanged","pass"];const allowed=["GOOD","RETRY","UNDERPRICE","FEE_DRIFT","QUEUE_WRONG","QUEUE_STALE","READBACK_DRIFT","BAD_PRICE_SIGNATURE","SELL","IDS_WRONG"];const rs=r.rows.map(x=>({case:allowed.indexOf(x.mode)+1,...Object.fromEntries(fields.map(k=>{a.ok(["number","boolean"].includes(typeof x[k]));return [k,x[k]]})),reasonClass:x.reason.split("|").map(y=>["RECOVERY","EVIDENCE_MISMATCH","ALREADY_COMMITTED_NO_REPLAY","COMMITTED_PROJECTION_PENDING","RAW_WRITE_FORBIDDEN"].includes(y)?y:y.endsWith("is not defined")?"MISSING_DEPENDENCY":y?"OTHER":"EMPTY")}));console.log(JSON.stringify({scope:r.scope,overlaySha256:r.overlaySha256,authenticHelperCount:r.authenticHelperCount,rows:rs,physicalWrites:0,certifiesP0:0}));a.equal(rs.length,10);a.ok(rs.every(x=>x.pass));' "$tmp/r.json"
+          node -e 'const a=require("node:assert/strict"), fs=require("node:fs");const r=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));a.equal(r.scope,"TX2A_LAB_AUTHENTIC_BUY_HANDOFF");a.equal(r.parentSha256,"f0b0da6f5a7dbac4ae57ee2ecb181a5b59324edff2407fe8f4af40ea52a765ab");a.match(r.overlaySha256,/^[a-f0-9]{64}$/);a.equal(r.physicalWrites,0);a.equal(r.projectionComplete,false);a.equal(r.fullGasBoot,false);a.equal(r.certifiesP0,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");const fields=["returnedFalse","exception","raw","port","prepare","commit","readbacks","queueReads","balanced","cashCents","feesCents","positions","positionUnits","positionMatches","plan","reserve","claim","commits","bookOK","opsUnchanged","pass"];const allowed=["GOOD","RETRY","UNDERPRICE","FEE_DRIFT","QUEUE_WRONG","QUEUE_STALE","READBACK_DRIFT","BAD_PRICE_SIGNATURE","SELL","IDS_WRONG","NOT_READY"];const rs=r.rows.map(x=>({case:allowed.indexOf(x.mode)+1,...Object.fromEntries(fields.map(k=>{a.ok(["number","boolean"].includes(typeof x[k]));return [k,x[k]]})),reasonClass:x.reason.split("|").map(y=>["RECOVERY","EVIDENCE_MISMATCH","ALREADY_COMMITTED_NO_REPLAY","COMMITTED_PROJECTION_PENDING","RAW_WRITE_FORBIDDEN"].includes(y)?y:y.endsWith("is not defined")?"MISSING_DEPENDENCY":y?"OTHER":"EMPTY")}));console.log(JSON.stringify({scope:r.scope,overlaySha256:r.overlaySha256,authenticHelperCount:r.authenticHelperCount,rows:rs,physicalWrites:0,certifiesP0:0}));a.equal(rs.length,11);a.ok(rs.every(x=>x.pass));' "$tmp/r.json"
           test "$rc" = 0
           echo TX2A_SYNTHETIC_BUY_HANDOFF_LAB_ONLY_NO_GAS_NO_W_NO_DEPLOY
