@@ -1,4 +1,4 @@
-name: TRADE C9W FULL authentic callers VM deny
+name: TRADE C9W TX2A authentic caller LAB handoff
 on:
   push:
     branches: ['audit/c9w-full-source-gate-only']
@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: 29e6e4be65c8225f905512a5f5894687a67198db
+          ref: 52a9bb4ac285cdc3ad953190504d86c114e24487
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
@@ -35,27 +35,29 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - name: Authentic caller VM deny integration, no network, sanitized receipt
+      - name: TX2A isolated synthetic handoff with sanitized result
         shell: bash
         run: |
           set -euo pipefail
           test "$(git -C private-source rev-parse HEAD)" = 36ec5545a504f2a8031c4d1754d1fc36675e8f63
-          test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
-          test "$(git -C private-gate rev-parse HEAD)" = 29e6e4be65c8225f905512a5f5894687a67198db
-          test "$(git -C private-gate rev-parse HEAD:integration/c9w_full_vm_deny.cjs)" = 05e84f7efb8c3882019c83edc9cb8b119c74889d
+          test "$(git -C private-gate rev-parse HEAD)" = 52a9bb4ac285cdc3ad953190504d86c114e24487
+          test "$(git -C private-gate rev-parse HEAD:integration/tx2a.cjs)" = 35fc4325b05408a3c25af42ba1bd9ec60ee8611d
+          test "$(git -C private-gate rev-parse HEAD:integration/authority_c9w_tx1_lab.cjs)" = 9cc7ce911fd5a2c1aec9a901dc77ba8af8d7347b
+          test "$(git -C private-gate rev-parse HEAD:integration/d9_boundary.cjs)" = ddeef2cebe7254bbd5d1cdcbd9e53479475f68ea
           tmp=$(mktemp -d)
           trap 'rm -rf "$tmp"' EXIT
-          mkdir "$tmp/src" "$tmp/home"
+          mkdir "$tmp/src" "$tmp/home" "$tmp/gate"
           git -C private-source archive HEAD candidate scripts docs tests lab | tar -x -C "$tmp/src"
-          test -z "$(find "$tmp/src" -type f \( -name '.clasp*' -o -name '.env*' \) -print -quit)"
+          git -C private-gate archive HEAD integration | tar -x -C "$tmp/gate"
+          test -z "$(find "$tmp/src" "$tmp/gate" -type f \( -name '.clasp*' -o -name '.env*' \) -print -quit)"
           nodebin=$(command -v node)
           "$nodebin" -v
           rc=0
-          sudo unshare --net -- setpriv --reuid="$(id -u)" --regid="$(id -g)" --clear-groups env -i PATH=/usr/bin:/bin HOME="$tmp/home" "$nodebin" "$PWD/private-gate/integration/c9w_full_vm_deny.cjs" "$tmp/src" >"$tmp/vm.json" 2>"$tmp/vm.err" || rc=$?
-          if [ ! -s "$tmp/vm.json" ]; then
-            echo C9W_VM_NO_STRUCTURED_RESULT
+          sudo unshare --net -- setpriv --reuid="$(id -u)" --regid="$(id -g)" --clear-groups env -i PATH=/usr/bin:/bin HOME="$tmp/home" "$nodebin" "$tmp/gate/integration/tx2a.cjs" "$tmp/src" >"$tmp/r.json" 2>"$tmp/e" || rc=$?
+          if [ ! -s "$tmp/r.json" ]; then
+            echo TX2A_NO_STRUCTURED_RESULT
             exit 2
           fi
-          node -e 'const a=require("node:assert/strict"),fs=require("node:fs");const r=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));a.equal(r.scope,"C9W_FULL_VM_DENY_ONLY");a.equal(r.parentSha256,"f0b0da6f5a7dbac4ae57ee2ecb181a5b59324edff2407fe8f4af40ea52a765ab");a.match(r.overlaySha256,/^[a-f0-9]{64}$/);a.equal(r.gasExecuted,false);a.equal(r.economicRealWrites,0);a.equal(r.realAuthorityConnected,false);a.equal(r.fullWriterIsolation,false);a.equal(r.allAlternativePathsEliminated,false);a.equal(r.certifiesOriginalP0,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");const out={scope:r.scope,overlaySha256:r.overlaySha256,authenticCallers:r.authenticCallers,legacyEntriesReplaced:r.legacyEntriesReplaced,patchedOwners:r.patchedOwners,rawMutationControl:r.rawMutationControl,typedMutationControl:r.typedMutationControl,fullGasBoot:r.fullGasBoot,rollbackByteExact:r.rollbackByteExact,fullOverlayCompiled:r.fullOverlayCompiled,rows:r.rows.map((x,i)=>({case:i+1,kind:x.kind,portCalls:x.portCalls,exactPort:x.exactPort,txBound:x.txBound,returnedFalse:x.returnedFalse,exception:x.exception,rawAttempts:x.rawAttempts,unchanged:x.unchanged,balanced:x.balanced,pass:x.pass})),economicRealWrites:0,certifiesOriginalP0:0,W:r.W};console.log(JSON.stringify(out));a.equal(r.authenticCallers,4);a.equal(r.legacyEntriesReplaced,3);a.equal(r.patchedOwners,12);a.equal(r.rawMutationControl,true);a.equal(r.typedMutationControl,true);a.equal(r.fullOverlayCompiled,true);a.equal(r.rollbackByteExact,true);a.ok(r.rows.every(x=>x.pass));' "$tmp/vm.json"
+          node -e 'const a=require("node:assert/strict"), fs=require("node:fs");const r=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));a.equal(r.scope,"TX2A_LAB_AUTHENTIC_BUY_HANDOFF");a.equal(r.parentSha256,"f0b0da6f5a7dbac4ae57ee2ecb181a5b59324edff2407fe8f4af40ea52a765ab");a.match(r.overlaySha256,/^[a-f0-9]{64}$/);a.equal(r.physicalWrites,0);a.equal(r.projectionComplete,false);a.equal(r.fullGasBoot,false);a.equal(r.certifiesP0,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");const fields=["returnedFalse","exception","raw","port","prepare","commit","readbacks","queueReads","balanced","cashCents","feesCents","positions","plan","reserve","claim","commits","bookOK","opsUnchanged","pass"];const allowed=["GOOD","RETRY","UNDERPRICE","FEE_DRIFT","QUEUE_WRONG","QUEUE_STALE","READBACK_DRIFT","BAD_PRICE_SIGNATURE","SELL","IDS_WRONG"];const rs=r.rows.map(x=>({case:allowed.indexOf(x.mode)+1,...Object.fromEntries(fields.map(k=>{a.ok(["number","boolean"].includes(typeof x[k]));return [k,x[k]]})),reasonClass:x.reason.split("|").map(y=>["RECOVERY","EVIDENCE_MISMATCH","ALREADY_COMMITTED_NO_REPLAY","COMMITTED_PROJECTION_PENDING","RAW_WRITE_FORBIDDEN"].includes(y)?y:y.endsWith("is not defined")?"MISSING_DEPENDENCY":y?"OTHER":"EMPTY")}));console.log(JSON.stringify({scope:r.scope,overlaySha256:r.overlaySha256,authenticHelperCount:r.authenticHelperCount,rows:rs,physicalWrites:0,certifiesP0:0}));a.equal(rs.length,10);a.ok(rs.every(x=>x.pass));' "$tmp/r.json"
           test "$rc" = 0
-          echo C9W_FULL_VM_AUTHENTIC_DENY_INTEGRATION_LOCAL_ONLY_NO_GAS_NO_W_NO_DEPLOY
+          echo TX2A_SYNTHETIC_BUY_HANDOFF_LAB_ONLY_NO_GAS_NO_W_NO_DEPLOY
