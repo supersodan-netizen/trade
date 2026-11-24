@@ -1,7 +1,8 @@
-name: TRADE TX2C scoped repair plus authentic BUY LAB
+name: TRADE D11 pinned delivery verification LAB only
 on:
   push:
     branches: ['audit/c9w-full-source-gate-only']
+    paths: ['.github/workflows/c9w-full-source-gate-only.yml']
 permissions:
   contents: read
 jobs:
@@ -10,80 +11,56 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
-      - name: Pinned canonical source read-only checkout
+      - name: Pinned private delivery checkout (read-only)
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: 36ec5545a504f2a8031c4d1754d1fc36675e8f63
+          ref: 674ac0720006c43ea6540c1a2bc7c43b39bba0f8
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
           submodules: false
           lfs: false
-          path: private-source
-      - name: Pinned private sparse LAB checkout
-        uses: actions/checkout@v5
-        with:
-          repository: supersodan-netizen/trade-staging
-          ref: 6c8dcdd2f10fd007d6ee1d28fc34711721c3bd80
-          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
-          persist-credentials: false
-          fetch-depth: 1
-          submodules: false
-          lfs: false
-          path: private-lab
+          path: private-delivery
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - name: Execute TX2B no-network synthetic SQLite projection tests and sanitize receipt
+      - name: Verify manifest and reproduce four builds and focal suites offline
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C private-source rev-parse HEAD)" = 36ec5545a504f2a8031c4d1754d1fc36675e8f63
-          test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
-          test "$(git -C private-lab rev-parse HEAD)" = 6c8dcdd2f10fd007d6ee1d28fc34711721c3bd80
-          test "$(git -C private-lab rev-parse HEAD:integration/authority_c9w_tx1_d10.cjs)" = 0cb5554eb1202f3f4fb84bef7d244a6ca294dda4
-          test "$(git -C private-lab rev-parse HEAD:integration/tx2b_projection_lab.cjs)" = 81f901174d6fdaa000a76b463cc568d5393406df
-          test "$(git -C private-lab rev-parse HEAD:integration/test_tx2b_projection.cjs)" = 64ce13cdc7c075df3acd860ed077cc02b1266880
+          test "$(git -C private-delivery rev-parse HEAD)" = 674ac0720006c43ea6540c1a2bc7c43b39bba0f8
+          test "$(git -C private-delivery rev-parse HEAD:entregas/2026-11-21-D11/MANIFEST.json)" = c46b990056fa4cf480df28c66676ca9d535088a5
           tmp=$(mktemp -d)
           trap 'rm -rf "$tmp"' EXIT
           mkdir "$tmp/src" "$tmp/home"
-          git -C private-lab archive HEAD integration | tar -x -C "$tmp/src"
-          test -z "$(find "$tmp/src" -type f \( -name '.clasp*' -o -name '.env*' -o -name '*.pem' \) -print -quit)"
+          git -C private-delivery archive HEAD entregas/2026-11-21-D11 | tar -x -C "$tmp/src"
+          cd "$tmp/src/entregas/2026-11-21-D11"
+          node -e 'const a=require("node:assert/strict"),f=require("node:fs"),p=require("node:path"),c=require("node:crypto");const m=JSON.parse(f.readFileSync("MANIFEST.json"));a.equal(m.files.length,42);a.equal(new Set(m.files.map(x=>x.path)).size,42);for(const x of m.files){a.ok(!p.isAbsolute(x.path)&&!x.path.split("/").includes(".."));const s=f.lstatSync(x.path);a.ok(s.isFile());const b=f.readFileSync(x.path);a.equal(b.length,x.bytes);a.equal(c.createHash("sha256").update(b).digest("hex"),x.sha256)}console.log("D11_MANIFEST_SHA256_AND_BYTES_42_OF_42")' >"$tmp/manifest.log" 2>"$tmp/manifest.err" || { echo D11_MANIFEST_FAILED; exit 1; }
+          cat "$tmp/manifest.log"
           nodebin=$(command -v node)
           "$nodebin" -v
-          "$nodebin" --check "$tmp/src/integration/tx2b_projection_lab.cjs"
-          "$nodebin" --check "$tmp/src/integration/test_tx2b_projection.cjs"
-          rc=0
-          sudo unshare --net -- setpriv --reuid="$(id -u)" --regid="$(id -g)" --clear-groups env -i PATH=/usr/bin:/bin HOME="$tmp/home" "$nodebin" "$tmp/src/integration/test_tx2b_projection.cjs" >"$tmp/r.json" 2>"$tmp/e" || rc=$?
-          if [ ! -s "$tmp/r.json" ]; then
-            echo TX2B_NO_STRUCTURED_RESULT
-            exit 2
-          fi
-          node -e 'const a=require("node:assert/strict"),fs=require("node:fs");const r=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));const expected=["P01_HAPPY_COMMIT_TO_FOUR_VIEWS_AND_READY_ONLY","P02_REPLAY_PREPARE_CLEAR_NO_DUPLICATE","P03_REFUSE_UNCOMMITTED_TX","P04_REJECT_OUT_OF_ORDER_AND_PERSIST_HOLD","P05_LOCKED_TWO_WRITERS_BUSY_WITHOUT_EXTRA_ISSUE","P06_LIQ_EXTERNAL_TAMPER_CAUSES_FORENSIC_HOLD","P07_OP_EXTERNAL_TAMPER_CAUSES_HOLD","P08_TAMPER_AFTER_VERIFY_REVOKES_CLEAR","P09_TAMPER_AFTER_READY_REVOKES_EXISTING_TOKEN","P10_REJECT_DOUBLE_BOOTSTRAP","P11_DENY_STALE_FENCING_AFTER_LEASE","P12_SOURCE_BOOK_TAMPER_DENIED","P13_NO_AUTO_RESUME_AFTER_SIGKILL_STEP1_TO4","P14_NO_AUTO_CLEAR_AFTER_SIGKILL_POST_SEAL","P15_SIGKILL_AFTER_VERIFIED_CAN_RECHECK_AND_CLEAR","P16_SIGKILL_AFTER_CLEAR_RECEIPT_IDEMPOTENT","P17_CLAIMED_STATUS_CANNOT_PREPARE","P18_SECOND_PLAN_DENIED_BY_PERSISTENCE_GATE","P19_SECOND_COMMIT_DENIED_EVEN_AFTER_LAB_CLEAR_READY","C01_UNIFIED_HOLD_EVIDENCE_LINK_AND_REVOKE","C02_DUPLICATE_OBSERVATION_ONE_INCIDENT","C03_NEW_ISSUE_INVALIDATES_OLD_APPROVED_GRANT","C04_LEGACY_ADMIN_CANNOT_REPAIR_OR_RELEASE","C05_OTHER_HOLD_RELEASE_LEAVES_PROJECTION_HOLD","C06_SQL_FAILURE_AT_LINK_ROLLS_BACK_ALL_AND_RETRY","C07_SIGKILL_INSIDE_UNIFIED_HOLD_ROLLBACK_RETRY","C08_REAL_DRIFT_PATH_LINKS_ADMIN_INCIDENT","R01_DUAL_REPAIR_RECONSTRUCT_FOUR_VIEWS_KEEP_HOLD","R02_NO_EXECUTE_WITHOUT_APPROVAL","R03_SAME_PRINCIPAL_DENIED","R04_WRONG_EXECUTOR_AND_SCOPE_DENIED","R05_SINK_DRIFT_AFTER_APPROVAL_DENIED","R06_NEW_INCIDENT_INVALIDATES_REPAIR_GRANT","R07_WRONG_SINK_DENIED","R08_REPLAY_NO_SECOND_REWRITE","R09_TAMPER_AFTER_REPAIR_BEFORE_VERIFY","R10_SIGKILL_START_TRANSACTION_ROLLBACK","R11_SIGKILL_AFTER_SINK_RECONCILE_WITHOUT_REWRITE","R12_EXPIRED_GRANT_DENIED","R13_SIGKILL_AFTER_STARTED_BEFORE_SINK_NO_REWRITE","R14_SIGKILL_MID_SINK_ROLLBACK_NO_REWRITE","R15_NO_NEW_GRANT_FOR_ALREADY_REPAIRED_INCIDENT","D11X03_BEGIN_ALTERED_TARGET_AND_REHASH","D11X03_STEP_WRONG_OPS_AND_FAKE_BROKER_ACK","D11X03_SEAL_REHASH_DENIED","D11X03_VERIFY_REHASH_DENIED","D11X03_READY_REHASH_REVOKED","D11X13_ADMIN_SUFFIX_VALID_COMMIT","D11X11_BOOT_FOREIGN_STEP_DENIED"];a.equal(r.scope,"TX2C_D11_X03_SOURCE_GATE_LAB");a.equal(r.rows.length,expected.length);a.deepEqual(r.rows.map(x=>x.id),expected);console.log(JSON.stringify({scope:r.scope,pass:r.pass,fail:r.fail,rows:r.rows.map(x=>({id:x.id,pass:x.pass,code:x.pass?null:(/^(TX2B_[A-Z0-9_]+|ERR_ASSERTION|SQLITE_[A-Z0-9_]+)$/.test(x.errorCode||"")?x.errorCode:'UNKNOWN')})),physicalWrites:r.physicalWrites,physicalClear:r.physicalClear,realGAS:r.realGAS,realBroker:r.realBroker,certifiesP0:r.certifiesP0,W:r.W}));a.equal(r.fail,0);a.equal(r.pass,49);a.ok(r.rows.every(x=>x.pass));a.equal(r.physicalWrites,0);a.equal(r.physicalClear,false);a.equal(r.certifiesP0,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/r.json"
-          test "$rc" = 0
-          echo TX2B_SYNTHETIC_SEPARATE_SINK_LAB_ONLY_NO_W_NO_GAS_NO_CLEAR
-      - name: Authentic C9M BUY to D10 authority and independent synthetic LIQ POS OPS OBS readback
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "$(git -C private-source rev-parse HEAD)" = 36ec5545a504f2a8031c4d1754d1fc36675e8f63
-          test "$(git -C private-lab rev-parse HEAD)" = 6c8dcdd2f10fd007d6ee1d28fc34711721c3bd80
-          test "$(git -C private-lab rev-parse HEAD:integration/tx2b_authentic_with_projection.cjs)" = 1cfe6b2141f9a03d69033b730f8b25ca3c7e1e2a
-          tmp=$(mktemp -d)
-          trap 'rm -rf "$tmp"' EXIT
-          mkdir "$tmp/src" "$tmp/gate" "$tmp/home"
-          git -C private-source archive HEAD candidate scripts docs tests lab | tar -x -C "$tmp/src"
-          git -C private-lab archive HEAD integration | tar -x -C "$tmp/gate"
-          test -z "$(find "$tmp/src" "$tmp/gate" -type f \( -name '.clasp*' -o -name '.env*' -o -name '*.pem' \) -print -quit)"
-          nodebin=$(command -v node)
-          "$nodebin" --check "$tmp/gate/integration/tx2b_authentic_with_projection.cjs"
-          rc=0
-          sudo unshare --net -- setpriv --reuid="$(id -u)" --regid="$(id -g)" --clear-groups env -i PATH=/usr/bin:/bin HOME="$tmp/home" "$nodebin" "$tmp/gate/integration/tx2b_authentic_with_projection.cjs" "$tmp/src" >"$tmp/r.json" 2>"$tmp/e" || rc=$?
-          if [ ! -s "$tmp/r.json" ]; then
-            echo TX2B_AUTHENTIC_NO_STRUCTURED_RESULT
-            exit 2
-          fi
-          "$nodebin" -e 'const a=require("node:assert/strict"),fs=require("node:fs");const r=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));const expected=["GOOD","RETRY","UNDERPRICE","FEE_DRIFT","QUEUE_WRONG","QUEUE_STALE","READBACK_DRIFT","BAD_PRICE_SIGNATURE","SELL","IDS_WRONG","NOT_READY","CATALOG_UNDERCHARGE"];a.equal(r.scope,"TX2B_AUTHENTIC_BUY_PLUS_SYNTHETIC_PROJECTION_LAB");a.equal(r.parentSha256,"f0b0da6f5a7dbac4ae57ee2ecb181a5b59324edff2407fe8f4af40ea52a765ab");a.equal(r.overlaySha256,"e709a5ae4d986b960e97925f4f75625faf312f734e1ee39883d9bb0f0dc8ffe1");a.deepEqual(r.rows.map(x=>x.mode),expected);a.equal(r.rows.length,12);a.equal(r.physicalWrites,0);a.equal(r.projectionCompletePhysical,false);a.equal(r.fullGasBoot,false);a.equal(r.certifiesP0,0);console.log(JSON.stringify({scope:r.scope,overlaySha256:r.overlaySha256,pass:r.rows.filter(x=>x.pass).length,fail:r.rows.filter(x=>!x.pass).length,rows:r.rows.map(x=>({case:expected.indexOf(x.mode)+1,pass:x.pass,projection:x.projected,proof:x.projectionProof,labClearReady:x.projectionClearReady,physicalClear:x.projectionPhysicalClear,projectedRows:x.projectionRows,raw:x.raw,commits:x.commits,catalogCount:x.catalogCount,issueClass:x.projectionError&&/^[A-Z0-9_]+$/.test(x.projectionError)?x.projectionError:null})),physicalWrites:0,physicalClear:false,W:r.W}));a.ok(r.rows.every(x=>x.pass));a.ok(r.rows.slice(0,2).every(x=>x.projected===true&&x.projectionProof===true&&x.projectionClearReady===true&&x.projectionPhysicalClear===false&&x.projectionRows===4));a.ok(r.rows.slice(2).every(x=>x.projected===false));a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/r.json"
-          test "$rc" = 0
-          echo TX2B_AUTHENTIC_BUY_FOUR_VIEWS_LAB_ONLY_NO_W_NO_GAS_NO_CLEAR
+          # No secrets, network, deploy credentials, operational data or source logs in test subprocesses.
+          offline() {
+            sudo unshare --net -- setpriv --reuid="$(id -u)" --regid="$(id -g)" --clear-groups env -i PATH=/usr/bin:/bin HOME="$tmp/home" "$nodebin" "$@"
+          }
+          for variant in lab papersim produccion; do
+            args=()
+            suffix=""
+            if [ "$variant" = papersim ]; then args=(--entorno PAPER-SIM); suffix=_papersim; fi
+            if [ "$variant" = produccion ]; then args=(--produccion); suffix=_produccion; fi
+            offline codigo/build_d11.cjs codigo/authority_c9w_tx1_d10.cjs "${args[@]}" --salida "$tmp/build.cjs" >"$tmp/build.log" 2>"$tmp/build.err" || { echo D11_BUILD_FAILED; exit 1; }
+            cmp -s "$tmp/build.cjs" "codigo/authority_c9w_tx1_d11${suffix}.cjs" || { echo D11_BUILD_BYTES_MISMATCH; exit 1; }
+            echo "D11_BUILD_IDENTICAL_$variant"
+          done
+          offline codigo/build_tx2b_d11.cjs codigo/tx2b_projection_lab_equipo.cjs "$tmp/projection.cjs" >"$tmp/p.log" 2>"$tmp/p.err" || { echo D11_PROJECTION_BUILD_FAILED; exit 1; }
+          cmp -s "$tmp/projection.cjs" codigo/tx2b_projection_lab_d11.cjs || { echo D11_PROJECTION_BUILD_MISMATCH; exit 1; }
+          echo D11_PROJECTION_BUILD_IDENTICAL
+          offline pruebas/recuperacion/test_d10_recovery.cjs codigo/authority_c9w_tx1_d10.cjs --json "$tmp/recovery.json" >"$tmp/r.log" 2>"$tmp/r.err" || { echo D11_RECOVERY_FAILED; exit 1; }
+          offline pruebas/estricto/test_d11_estricto.cjs --json "$tmp/strict.json" >"$tmp/s.log" 2>"$tmp/s.err" || { echo D11_STRICT_FAILED; exit 1; }
+          offline pruebas/recuperacion/barrido_oraculos.cjs codigo/authority_c9w_tx1_d10.cjs --test pruebas/recuperacion/test_d10_recovery.cjs --json "$tmp/oracles.json" >"$tmp/o.log" 2>"$tmp/o.err" || { echo D11_ORACLES_FAILED; exit 1; }
+          offline pruebas/recuperacion/sensibilidad_d10.cjs codigo/authority_c9w_tx1_d10.cjs --json "$tmp/m10.json" >"$tmp/m10.log" 2>"$tmp/m10.err" || { echo D11_D10_MUTANTS_FAILED; exit 1; }
+          offline pruebas/estricto/sensibilidad_d11.cjs codigo/authority_c9w_tx1_d11.cjs --json "$tmp/m11.json" >"$tmp/m11.log" 2>"$tmp/m11.err" || { echo D11_STRICT_MUTANTS_FAILED; exit 1; }
+          node -e 'const a=require("node:assert/strict"),f=require("node:fs"),d=process.argv[1],r=n=>JSON.parse(f.readFileSync(d+"/"+n+".json"));for(const [n,t] of [["recovery",32],["strict",15]]){const x=r(n);a.equal(x.totales.PASS,t);a.equal(Object.values(x.totales).reduce((s,v)=>s+v,0),t);console.log("D11_"+n.toUpperCase()+"_"+t+"_OF_"+t)}for(const [n,t] of [["m10",19],["m11",18]]){const x=r(n);a.equal(x.detectados,t);a.equal(x.total,t);console.log("D11_"+n.toUpperCase()+"_"+t+"_OF_"+t)}const o=r("oracles");a.ok(o.mutantes.find(m=>m.mutante.startsWith("S5")).pruebasQueFallan.includes("R01"));const deny=o.mutantes.find(m=>m.mutante.startsWith("DENY_TOTAL"));a.ok(deny);a.equal(deny.pruebasQuePasanConDENY.length,0);a.equal(o.estatico.length,0);console.log("D11_R01_CAUSAL_AND_DENY_TOTAL_ZERO_PASS")' "$tmp" >"$tmp/gate.log" 2>"$tmp/gate.err" || { echo D11_RECEIPT_GATE_FAILED; exit 1; }
+          cat "$tmp/gate.log"
+          echo D11_REPRODUCTION_LAB_ONLY_NO_GAS_NO_W_NO_DEPLOY
