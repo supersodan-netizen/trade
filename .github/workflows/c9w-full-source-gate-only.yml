@@ -1,4 +1,4 @@
-name: TRADE RC2 T9 contention and repair protection LAB
+name: TRADE RC2 RS1 read-only recovery inventory LAB
 on:
   push:
     branches: ['audit/c9w-full-source-gate-only']
@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: 7724a51f35e6b37879dcaab3807bf9fd34e0cb30
+          ref: ea8a3f14cd317e0e8703dc581e67bb6885ab02da
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
@@ -36,13 +36,13 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - name: RC2 T9 and R16-R19 plus accumulated suites offline
+      - name: RS1 recovery inventory and full causal regression offline
         shell: bash
         run: |
           set -euo pipefail
           test "$(git -C private-source rev-parse HEAD)" = 36ec5545a504f2a8031c4d1754d1fc36675e8f63
           test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
-          test "$(git -C private-lab rev-parse HEAD)" = 7724a51f35e6b37879dcaab3807bf9fd34e0cb30
+          test "$(git -C private-lab rev-parse HEAD)" = ea8a3f14cd317e0e8703dc581e67bb6885ab02da
           tmp=$(mktemp -d)
           trap 'rm -rf "$tmp"' EXIT
           mkdir "$tmp/src" "$tmp/gate" "$tmp/home"
@@ -57,6 +57,11 @@ jobs:
             sudo unshare --net -- setpriv --reuid="$(id -u)" --regid="$(id -g)" --clear-groups env -i PATH=/usr/bin:/bin HOME="$tmp/home" "$nodebin" "$@"
           }
           sha256sum "$out/authority_c9w_tx1_d10.cjs" | awk '{print "RC1_AUTHORITY_SHA256=" $1}'
+          rsrc=0
+          offline "$out/test_recovery_scan.cjs" >"$tmp/rs1.json" 2>"$tmp/rs1.err" || rsrc=$?
+          test -s "$tmp/rs1.json" || { echo RS1_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs");const r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:r.scope,pass:r.pass,fail:r.fail,failed:r.rows.filter(x=>!x.pass).map(x=>({id:x.id,code:x.errorCode})),W:r.W}));a.equal(r.scope,"RC2_RS1_READ_ONLY_LAB");a.equal(r.rows.length,19);a.equal(r.pass,19);a.equal(r.fail,0);a.ok(r.rows.every(x=>x.pass));a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/rs1.json"
+          test "$rsrc" = 0
           q2rc=0
           offline "$out/test_q2.cjs" >"$tmp/q2.json" 2>"$tmp/q2.err" || q2rc=$?
           test -s "$tmp/q2.json" || { echo Q2_NO_RECEIPT; exit 1; }
@@ -89,4 +94,4 @@ jobs:
           test -s "$tmp/t9.json" || { echo T9_NO_RECEIPT; exit 1; }
           "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:"D12_T9_RC2",pass:r.pass,total:r.total,rows:r.filas.map(x=>({id:x.id,pass:x.pass,esperado:x.esperado,observado:x.observado}))}));a.equal(r.total,17);a.equal(r.pass,17);a.ok(r.filas.every(x=>x.pass));' "$tmp/t9.json"
           test "$trc" = 0
-          echo RC2_T9_17_R16_4_PLUS_89_LAB_NO_W_NO_GAS_NO_DEPLOY
+          echo RC2_RS1_19_PLUS_110_LAB_NO_W_NO_GAS_NO_DEPLOY
