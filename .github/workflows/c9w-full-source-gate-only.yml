@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: 4b3b6a58bdf45f5e2cfc52e833112b773ced8103
+          ref: 03cf61057579c5af874e6503f01b3db12803443e
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
@@ -42,12 +42,12 @@ jobs:
           set -euo pipefail
           test "$(git -C private-source rev-parse HEAD)" = 36ec5545a504f2a8031c4d1754d1fc36675e8f63
           test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
-          test "$(git -C private-lab rev-parse HEAD)" = 4b3b6a58bdf45f5e2cfc52e833112b773ced8103
+          test "$(git -C private-lab rev-parse HEAD)" = 03cf61057579c5af874e6503f01b3db12803443e
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = e279d6bf654cb69a8a3320cee9d7e0f36ccef559
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_projection_lab.cjs)" = 072314c266060fae7a3442eb12e1f1792a81c1ec
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_recovery_source.cjs)" = a0cff670b27567d1558794114e06506e79d9b83e
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_recovery.cjs)" = d8a76904d8b73202663847da7468e8c75bf6d5ce
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_buy_source.cjs)" = acfe160d4185c63a772ea83a4bb89c9a72cf2607
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_buy_source.cjs)" = bb753f755868c7c1610a4e9f18bc111b8663f177
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_authentic_with_projection.cjs)" = aa1644aaf9dbbdf579b4bca51d61a1c63320bc6c
           tmp=$(mktemp -d)
           trap 'rm -rf "$tmp"' EXIT
