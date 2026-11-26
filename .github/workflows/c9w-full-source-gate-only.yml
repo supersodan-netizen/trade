@@ -1,4 +1,4 @@
-name: TRADE D14 OP1b recovery callers LAB
+name: TRADE D14 PG1 plus full baseline LAB
 on:
   push:
     branches: ['audit/c9w-full-source-gate-only']
@@ -26,84 +26,177 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: 3ed510a0eb3215d381fe5c99fb37dc8601dbd4f5
+          ref: d6c300cf8ec8f37fa9da279571f329f9c5008d5e
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
           submodules: false
           lfs: false
           path: private-lab
+      - name: Pinned auditor D13 read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: e561059a9bb91e1322170c2ec3848f5db0463cd4
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-auditor
+      - name: Pinned parent authority read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: ce66089b1b051870d792346ac58f71394202b6b7
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-parent
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - name: D14 OP1b and targeted regressions offline
+      - name: D14 PG1 plus complete kernel and operational regression offline
         shell: bash
         run: |
           set -euo pipefail
           test "$(git -C private-source rev-parse HEAD)" = 36ec5545a504f2a8031c4d1754d1fc36675e8f63
           test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
-          test "$(git -C private-lab rev-parse HEAD)" = 3ed510a0eb3215d381fe5c99fb37dc8601dbd4f5
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 901d8a294181b7c3ab3c455a208c411cab9c16fc
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_projection_lab.cjs)" = 072314c266060fae7a3442eb12e1f1792a81c1ec
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_recovery_source.cjs)" = a0cff670b27567d1558794114e06506e79d9b83e
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_recovery.cjs)" = d8a76904d8b73202663847da7468e8c75bf6d5ce
+          test "$(git -C private-lab rev-parse HEAD)" = d6c300cf8ec8f37fa9da279571f329f9c5008d5e
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 4c1811d3fa97c0c21a2b869fe7b700d6686b4b2b
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_buy_source.cjs)" = bb753f755868c7c1610a4e9f18bc111b8663f177
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_authentic_with_projection.cjs)" = aa1644aaf9dbbdf579b4bca51d61a1c63320bc6c
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_recovery_source.cjs)" = a0cff670b27567d1558794114e06506e79d9b83e
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_source.cjs)" = 6f6fde50fcf7507c64131f3a5de18527ced1b3d0
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_stop.cjs)" = 96d4b6b2197370ecdb8904a705c8889c2e6a3c07
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_pb_stop.cjs)" = 3d5291877e97099568757d07dab6e59caede1730
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_cash_source.cjs)" = c0c15470a3360723866b21ea6cd133b81d1d4257
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/q2_fixture_lab.cjs)" = e54a79779c726765b550cbfd53cda8162a418e7e
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_d12_r16_r19.cjs)" = c8fc580a987e6ec5e03acd4e8a35512922cf7c97
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_d12_t9.cjs)" = eb196904a8d1e38e5131a10cf94fd39c6e87baf3
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_cash.cjs)" = c2f7b1efc1ecff7d4b3cafabb9a77081a249f9f3
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_recovery.cjs)" = d8a76904d8b73202663847da7468e8c75bf6d5ce
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_stop.cjs)" = 96d4b6b2197370ecdb8904a705c8889c2e6a3c07
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_stop_admission.cjs)" = 28d496cf75a06fd79814735ac4ae43e5b6d8b303
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_pb_stop.cjs)" = 3d5291877e97099568757d07dab6e59caede1730
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_q1.cjs)" = e86bf304ef0f94f222b0e0f42370a32cc2d7b700
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_q2.cjs)" = e2ac7b1ceb233ffbc9ee1c69f7dba2f0a92a727e
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_recovery_scan.cjs)" = 22488b7b86c52c49b1c9bc1df7006ca7cc3c32cb
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_rs2c3_mutants.cjs)" = f7a7e0b08afe82ff2f13c0804a12637235177cb0
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_tx2b_projection.cjs)" = 4b4118d7b726d6adca83ced3770be594205d45d6
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_authentic_with_projection.cjs)" = aa1644aaf9dbbdf579b4bca51d61a1c63320bc6c
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_projection_lab.cjs)" = 072314c266060fae7a3442eb12e1f1792a81c1ec
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_cash_source.cjs)" = c0c15470a3360723866b21ea6cd133b81d1d4257
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_cash.cjs)" = c2f7b1efc1ecff7d4b3cafabb9a77081a249f9f3
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_reconciliation_source.cjs)" = 5279c2f2ba0ec4d52c25f401b1206a817c57e50e
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_reconciliation.cjs)" = 7de01239271c6c0678583fa69df599965bc20db7
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_receipt_source.cjs)" = 2f93b803cc0c0125e4b1960a3e39a8a812a7c3a6
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_receipt.cjs)" = faf8214a82ca5d64b773864c816ad26b4dc87590
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_recovery_callers_source.cjs)" = 5b9182ab7eb88389a89ff2d1b585f2b523ead200
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_recovery_callers.cjs)" = 2936db8ee1c7760298d80afaaf3f887b2739eace
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_d14_stop_gate.cjs)" = d62d732aeedc32967152bf47160d9015c15c24c4
+          test "$(git -C private-parent rev-parse HEAD)" = ce66089b1b051870d792346ac58f71394202b6b7
+          test "$(git -C private-parent rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 901d8a294181b7c3ab3c455a208c411cab9c16fc
           tmp=$(mktemp -d)
           trap 'rm -rf "$tmp"' EXIT
-          mkdir "$tmp/src" "$tmp/gate" "$tmp/home"
+          mkdir "$tmp/src" "$tmp/gate" "$tmp/home" "$tmp/auditor" "$tmp/parent"
+          test "$(git -C private-auditor rev-parse HEAD)" = e561059a9bb91e1322170c2ec3848f5db0463cd4
+          test "$(git -C private-auditor rev-parse HEAD:entregas/2026-11-24-D13/c_t9/codigo/test_c_t9.cjs)" = a4d629b441c23087a57b92d7ef993c3c3a1124d0
+          test "$(git -C private-auditor rev-parse HEAD:entregas/2026-11-24-D13/c_t9/codigo/lockshm.py)" = ddf716d1069a3df7475b30c585fdc1ec72bc5385
+          test "$(git -C private-auditor rev-parse HEAD:entregas/2026-11-24-D13/a_autoridad/codigo/test_d13_autoridad.cjs)" = 7b154dc41ae879dfd4ff8aaf1737b65dd3a2a668
+          git -C private-auditor archive HEAD entregas/2026-11-24-D13/c_t9/codigo/test_c_t9.cjs entregas/2026-11-24-D13/c_t9/codigo/lockshm.py entregas/2026-11-24-D13/a_autoridad/codigo/test_d13_autoridad.cjs | tar -x -C "$tmp/auditor"
+          python3 -I - "$tmp/auditor/entregas/2026-11-24-D13/c_t9/codigo/test_c_t9.cjs" <<'PY'
+          import pathlib,sys
+          p=pathlib.Path(sys.argv[1]); s=p.read_text()
+          a="A.init(db, { cashCents:"
+          assert s.count(a)==1
+          p.write_text(s.replace(a,"A.init(db, { instanceId: 'LAB-INSTANCIA-PRUEBAS', cashCents:"))
+          PY
+          python3 -I - "$tmp/auditor/entregas/2026-11-24-D13/a_autoridad/codigo/test_d13_autoridad.cjs" <<'PY'
+          import pathlib,sys
+          p=pathlib.Path(sys.argv[1]); s=p.read_text()
+          a="A.init(db, { ...(instanceId ?"
+          assert s.count(a)==1
+          p.write_text(s.replace(a,"A.init(db, { labMode: 'AUTHORITY_ONLY_FIXTURE', ...(instanceId ?"))
+          PY
           git -C private-source archive HEAD candidate scripts docs tests lab | tar -x -C "$tmp/src"
-          git -C private-lab archive HEAD lab/trade-integrated-baseline | tar -x -C "$tmp/gate"
-          test -z "$(find "$tmp/src" "$tmp/gate" -type f \( -name '.clasp*' -o -name '.env*' -o -name '*.pem' \) -print -quit)"
+          git -C private-lab archive HEAD lab/c9w-full-d11-x03 lab/c9w-full-d11-strict-q1 lab/trade-integrated-baseline | tar -x -C "$tmp/gate"
+          git -C private-parent archive HEAD lab/trade-integrated-baseline | tar -x -C "$tmp/parent"
+          test -z "$(find "$tmp/src" "$tmp/gate" "$tmp/parent" -type f \( -name '.clasp*' -o -name '.env*' -o -name '*.pem' \) -print -quit)"
           nodebin=$(command -v node)
+          base="$tmp/gate/lab/c9w-full-d11-x03"
+          tools="$tmp/gate/lab/c9w-full-d11-strict-q1"
           out="$tmp/gate/lab/trade-integrated-baseline"
           offline() {
             sudo unshare --net -- setpriv --reuid="$(id -u)" --regid="$(id -g)" --clear-groups env -i PATH=/usr/bin:/bin HOME="$tmp/home" "$nodebin" "$@"
           }
-          ca=0
-          offline "$out/test_operational_cash.cjs" "$tmp/src" >"$tmp/cash.json" 2>"$tmp/cash.err" || ca=$?
-          test -s "$tmp/cash.json" || {
-            echo OP4A_NO_RECEIPT
-            "$nodebin" -e 'const s=require("node:fs").readFileSync(process.argv[1],"utf8");console.log(JSON.stringify({diagnostic:"OP4A_SETUP_FAILURE",safe:[...new Set((s.match(/(?:OP4_[A-Z_]+|ERR_ASSERTION|SyntaxError|ReferenceError|TypeError)/g)||[]))],frames:[...new Set([...s.matchAll(/(?:operational_cash_source|test_operational_cash)\.cjs:\d+:\d+/g)].map(x=>x[0]))]}));' "$tmp/cash.err"
-            exit 1
-          }
-          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify(r));a.equal(r.scope,"OP4A_EFFECTIVE_CASH_SOURCE_LAB");a.equal(r.total,19);a.equal(r.pass,19);a.equal(new Set(r.rows.map(x=>x.id)).size,19);a.ok(r.rows.every(x=>x.pass));a.equal(r.manifest.parentSourceSha256,"a5212b19b079386063d27c2e0378186a68d41d17c413212fc85141fc3d5a0e0f");a.equal(r.manifest.rollbackByteExact,true);a.equal(r.manifest.physicalWrites,0);a.equal(r.manifest.certifiesP0,0);a.equal(r.manifest.deployable,false);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/cash.json"
-          test "$ca" = 0
+          sha256sum "$out/authority_c9w_tx1_d10.cjs" | awk '{print "RC1_AUTHORITY_SHA256=" $1}'
           sb=0
           offline "$out/test_operational_stop_admission.cjs" >"$tmp/sb.json" 2>"$tmp/sb.err" || sb=$?
           test -s "$tmp/sb.json" || { echo OP3B_NO_RECEIPT; exit 1; }
           "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs");const r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:r.scope,pass:r.pass,total:r.total,rows:r.rows.map(x=>({id:x.id,pass:x.pass,errorCode:x.errorCode,detail:x.detail}))}));a.equal(r.scope,"OP3B_STOP_ADMISSION_LAB");a.equal(r.total,14);a.equal(r.pass,14);a.equal(r.rows.length,14);a.equal(new Set(r.rows.map(x=>x.id)).size,14);a.ok(r.rows.every(x=>x.pass));a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/sb.json"
           test "$sb" = 0
+          rsrc=0
+          offline "$out/test_recovery_scan.cjs" --rs2c3a >"$tmp/rs1.json" 2>"$tmp/rs1.err" || rsrc=$?
+          test -s "$tmp/rs1.json" || { echo RS1_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs");const r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:r.scope,pass:r.pass,fail:r.fail,failed:r.rows.filter(x=>!x.pass).map(x=>({id:x.id,code:x.errorCode})),W:r.W}));a.equal(r.scope,"RC2_RS2C3A_EXPORT_GUARD_LAB");a.equal(r.rows.length,154);a.equal(new Set(r.rows.map(x=>x.id)).size,154);a.equal(r.pass,154);a.equal(r.fail,0);a.ok(r.rows.every(x=>x.pass));a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/rs1.json"
+          test "$rsrc" = 0
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_rs2c3_mutants.cjs)" = f7a7e0b08afe82ff2f13c0804a12637235177cb0
+          mrc=0
+          offline "$out/test_rs2c3_mutants.cjs" >"$tmp/mutants.json" 2>"$tmp/mutants.err" || mrc=$?
+          test -s "$tmp/mutants.json" || { echo RS2C3_MUTANTS_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs");const r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify(r));a.equal(r.scope,"RC2_RS2C3A_MUTATION_LAB");a.equal(r.classifierControls,7);a.equal(r.control,11);a.equal(r.total,10);a.equal(r.detected,10);a.equal(r.invalid,0);a.equal(r.survived,0);a.equal(r.rows.length,10);a.equal(new Set(r.rows.map(x=>x.id)).size,10);a.ok(r.rows.every(x=>x.state==="DETECTED_SEMANTIC"&&x.failures.length&&x.failures.every(y=>y.semantic===true)));a.equal(r.originalsUntouched,true);a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/mutants.json"
+          test "$mrc" = 0
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_pb_stop.cjs)" = 3d5291877e97099568757d07dab6e59caede1730
+          pbc=0
+          offline "$out/test_pb_stop.cjs" "$out" pb "$tmp/pb.json" >"$tmp/pb.out" 2>"$tmp/pb.err" || pbc=$?
+          test -s "$tmp/pb.json" || { echo PB_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:"D13_PB_STOP_SENTINEL_ADAPTED_LAB",pass:r.pass,total:r.total,rows:r.filas.map(x=>({id:x.id,pass:x.pass,esperado:x.esperado,observado:x.observado,codigo:/^[A-Z0-9_]+$/.test(x.codigo||"")?x.codigo:null}))}));a.equal(r.modo,"pb");a.equal(r.total,13);a.equal(r.pass,13);a.equal(new Set(r.filas.map(x=>x.id)).size,13);a.ok(r.filas.every(x=>x.pass));' "$tmp/pb.json"
+          test "$pbc" = 0
+          q2rc=0
+          offline "$out/test_q2.cjs" >"$tmp/q2.json" 2>"$tmp/q2.err" || q2rc=$?
+          test -s "$tmp/q2.json" || { echo Q2_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs");const r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:r.scope,pass:r.pass,fail:r.fail,failed:r.rows.filter(x=>!x.pass).map(x=>({id:x.id,code:x.errorCode})),W:r.W}));a.equal(r.scope,"RC1_Q2_ED25519_LAB");a.equal(r.rows.length,19);a.equal(r.pass,19);a.equal(r.fail,0);a.ok(r.rows.every(x=>x.pass));a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/q2.json"
+          test "$q2rc" = 0
+          for f in "$out"/*.cjs; do "$nodebin" --check "$f" >/dev/null 2>&1 || { echo Q1_SYNTAX_FAILED; exit 1; }; done
+          qrc=0
+          offline "$out/test_q1.cjs" "$out" "$base" >"$tmp/q1.json" 2>"$tmp/q1.err" || qrc=$?
+          test -s "$tmp/q1.json" || { echo Q1_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs");const r=JSON.parse(f.readFileSync(process.argv[1]));a.equal(r.scope,"D11_Q1_REGRESSION_Q2_LAB");a.equal(r.rows.length,9);console.log(JSON.stringify({scope:r.scope,pass:r.pass,fail:r.fail,rows:r.rows.map((x,i)=>({case:i+1,pass:x.pass,code:/^[A-Z0-9_]+$/.test(x.errorCode||"")?x.errorCode:null})),W:r.W}));a.equal(r.pass,9);a.equal(r.fail,0);a.ok(r.rows.every(x=>x.pass));a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.quoteCustodyImplemented,true);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/q1.json"
+          test "$qrc" = 0
+          prc=0
+          offline "$out/test_tx2b_projection.cjs" >"$tmp/proj.json" 2>"$tmp/proj.err" || prc=$?
+          test -s "$tmp/proj.json" || { echo Q1_PROJECTION_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs");const r=JSON.parse(f.readFileSync(process.argv[1]));a.equal(r.scope,"TX2C_D11_X03_SOURCE_GATE_LAB");a.equal(r.rows.length,49);a.equal(new Set(r.rows.map(x=>x.id)).size,49);console.log(JSON.stringify({scope:r.scope,pass:r.pass,fail:r.fail,failed:r.rows.filter(x=>!x.pass).map(x=>({id:x.id,code:/^[A-Z0-9_]+$/.test(x.errorCode||"")?x.errorCode:null})),W:r.W}));a.equal(r.pass,49);a.equal(r.fail,0);a.ok(r.rows.every(x=>x.pass));a.equal(r.physicalWrites,0);a.equal(r.physicalClear,false);a.equal(r.certifiesP0,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/proj.json"
+          test "$prc" = 0
+          arc=0
+          offline "$out/tx2b_authentic_with_projection.cjs" "$tmp/src" >"$tmp/auth.json" 2>"$tmp/auth.err" || arc=$?
+          test -s "$tmp/auth.json" || { echo Q1_AUTHENTIC_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs");const r=JSON.parse(f.readFileSync(process.argv[1]));a.equal(r.scope,"TX2B_AUTHENTIC_BUY_PLUS_SYNTHETIC_PROJECTION_LAB");a.equal(r.parentSha256,"f0b0da6f5a7dbac4ae57ee2ecb181a5b59324edff2407fe8f4af40ea52a765ab");a.equal(r.overlaySha256,"e709a5ae4d986b960e97925f4f75625faf312f734e1ee39883d9bb0f0dc8ffe1");a.equal(r.rows.length,12);console.log(JSON.stringify({scope:r.scope,pass:r.rows.filter(x=>x.pass).length,failed:r.rows.filter(x=>!x.pass).map(x=>x.mode),W:r.W}));a.ok(r.rows.every(x=>x.pass));a.ok(r.rows.slice(0,2).every(x=>x.projected===true&&x.projectionProof===true&&x.projectionClearReady===true&&x.projectionPhysicalClear===false&&x.projectionRows===4));a.ok(r.rows.slice(2).every(x=>x.projected===false));a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.projectionCompletePhysical,false);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/auth.json"
+          test "$arc" = 0
+          rrc=0
+          offline "$out/test_d12_r16_r19.cjs" "$out" >"$tmp/r16.json" 2>"$tmp/r16.err" || rrc=$?
+          test -s "$tmp/r16.json" || { echo R16_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:"D12_R16_R19",pass:r.filter(x=>x.pass).length,rows:r.map(x=>({id:x.id,pass:x.pass,errorCode:x.errorCode}))}));a.equal(r.length,4);a.ok(r.every(x=>x.pass));' "$tmp/r16.json"
+          test "$rrc" = 0
+          sha256sum "$out/tx2b_projection_lab.cjs" | awk '{print "RC2_PROJECTOR_SHA256=" $1}'
+          trc=0
+          offline "$out/test_d12_t9.cjs" "$out" corregido "$tmp/t9.json" >"$tmp/t9.out" 2>"$tmp/t9.err" || trc=$?
+          test -s "$tmp/t9.json" || { echo T9_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:"D12_T9_RC2",pass:r.pass,total:r.total,rows:r.filas.map(x=>({id:x.id,pass:x.pass,esperado:x.esperado,observado:x.observado}))}));a.equal(r.total,17);a.equal(r.pass,17);a.ok(r.filas.every(x=>x.pass));' "$tmp/t9.json"
+          test "$trc" = 0
+          crc=0
+          sudo unshare --net -- setpriv --reuid="$(id -u)" --regid="$(id -g)" --clear-groups env -i PATH=/usr/bin:/bin HOME="$tmp/home" D13C_SOLO=E1,E2,E3,E4,P6_01,P6_02,O1 "$nodebin" "$tmp/auditor/entregas/2026-11-24-D13/c_t9/codigo/test_c_t9.cjs" "$out" corregido "$tmp/c13.json" >"$tmp/c13.out" 2>"$tmp/c13.err" || crc=$?
+          test -s "$tmp/c13.json" || { echo D13C_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:"D13_C_PC_REACHABLE_AFTER_RC3",pass:r.pass,total:r.total,rows:r.filas.map(x=>({id:x.id,pass:x.pass,esperado:x.esperado,observado:x.observado,errcode:x.evidencia?.llamada?.sqlite?.errcode??x.evidencia?.llamada?.errcode??null}))}));a.equal(r.modo,"corregido");a.equal(r.total,7);a.equal(r.pass,7);a.equal(new Set(r.filas.map(x=>x.id)).size,7);a.ok(r.filas.every(x=>!/^P6_0[34]/.test(x.id)));a.ok(r.filas.every(x=>x.pass));' "$tmp/c13.json"
+          test "$crc" = 0
+          pac=0
+          offline "$tmp/auditor/entregas/2026-11-24-D13/a_autoridad/codigo/test_d13_autoridad.cjs" "$out" pa "$tmp/pa.json" >"$tmp/pa.out" 2>"$tmp/pa.err" || pac=$?
+          test -s "$tmp/pa.json" || { echo D13PA_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:"D13_PA_AUTHORITY",pass:r.pass,total:r.total,rows:r.filas.map(x=>({id:x.id,pass:x.pass,esperado:x.esperado,observado:x.observado}))}));a.equal(r.modo,"pa");a.equal(r.total,17);a.equal(r.pass,17);a.equal(new Set(r.filas.map(x=>x.id)).size,17);a.ok(r.filas.every(x=>x.pass));' "$tmp/pa.json"
+          test "$pac" = 0
           orc=0
           offline "$out/test_operational_recovery.cjs" "$tmp/src" >"$tmp/op.json" 2>"$tmp/op.err" || orc=$?
           test -s "$tmp/op.json" || { echo OP1_NO_RECEIPT; exit 1; }
           "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs");const r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify(r));a.equal(r.scope,"OP1_OPERATIONAL_RECOVERY_SOURCE_LAB");a.equal(r.rows.length,12);a.equal(new Set(r.rows.map(x=>x.id)).size,12);a.equal(r.pass,12);a.equal(r.fail,0);a.ok(r.rows.every(x=>x.pass));a.equal(r.manifest.parentSourceSha256,"f0b0da6f5a7dbac4ae57ee2ecb181a5b59324edff2407fe8f4af40ea52a765ab");a.equal(r.manifest.rollbackByteExact,true);a.equal(r.manifest.physicalWrites,0);a.equal(r.manifest.certifiesP0,0);a.equal(r.manifest.transportInstalled,false);a.equal(r.manifest.deployable,false);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/op.json"
           test "$orc" = 0
-          arc=0
-          offline "$out/tx2b_authentic_with_projection.cjs" "$tmp/src" >"$tmp/auth.json" 2>"$tmp/auth.err" || arc=$?
-          test -s "$tmp/auth.json" || { echo OP1_BUY_NO_RECEIPT; exit 1; }
-          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs");const r=JSON.parse(f.readFileSync(process.argv[1]));a.equal(r.scope,"TX2B_AUTHENTIC_BUY_PLUS_SYNTHETIC_PROJECTION_LAB");a.equal(r.parentSha256,"f0b0da6f5a7dbac4ae57ee2ecb181a5b59324edff2407fe8f4af40ea52a765ab");a.equal(r.overlaySha256,"e709a5ae4d986b960e97925f4f75625faf312f734e1ee39883d9bb0f0dc8ffe1");a.equal(r.rows.length,12);console.log(JSON.stringify({scope:r.scope,pass:r.rows.filter(x=>x.pass).length,failed:r.rows.filter(x=>!x.pass).map(x=>x.mode),W:r.W}));a.ok(r.rows.every(x=>x.pass));a.ok(r.rows.slice(0,2).every(x=>x.projected===true&&x.projectionProof===true&&x.projectionClearReady===true&&x.projectionPhysicalClear===false&&x.projectionRows===4));a.ok(r.rows.slice(2).every(x=>x.projected===false));a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.projectionCompletePhysical,false);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/auth.json"
-          test "$arc" = 0
           brc=0
           offline "$out/tx2b_authentic_with_projection.cjs" "$tmp/src" --op2 >"$tmp/buy.json" 2>"$tmp/buy.err" || brc=$?
           test -s "$tmp/buy.json" || {
@@ -122,11 +215,15 @@ jobs:
           }
           "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs");const r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify(r));a.equal(r.scope,"OP3A_OPERATIONAL_STOP_SOURCE_LAB");a.equal(r.total,18);a.equal(r.pass,18);a.equal(r.rows.length,18);a.equal(new Set(r.rows.map(x=>x.id)).size,18);a.ok(r.rows.every(x=>x.pass));a.equal(r.manifest.parentSourceSha256,"444eda47c9cd59030c40c10877e136f0a2607d923104cf5ad4421acc9ee46d83");a.equal(r.manifest.rollbackByteExact,true);a.equal(r.manifest.degradedOnly,true);a.equal(r.manifest.physicalWrites,0);a.equal(r.manifest.transportInstalled,false);a.equal(r.manifest.deployable,false);a.equal(r.manifest.certifiesP0,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/stop.json"
           test "$src" = 0
-          prc=0
-          offline "$out/test_pb_stop.cjs" "$out" pb "$tmp/pb.json" >"$tmp/pb.out" 2>"$tmp/pb.err" || prc=$?
-          test -s "$tmp/pb.json" || { echo OP3_PB_NO_RECEIPT; exit 1; }
-          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs");const r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:"D13_PB_STOP_SENTINEL_LAB",pass:r.pass,total:r.total,failed:r.filas.filter(x=>!x.pass).map(x=>x.id)}));a.equal(r.modo,"pb");a.equal(r.pass,13);a.equal(r.total,13);a.ok(r.filas.every(x=>x.pass));a.equal(r.modulo.autoridad,"f3895a4d40bf077b07453b2202a0c5b077d9765d1ffcb642de468ed42e8725b2");' "$tmp/pb.json"
-          test "$prc" = 0
+          ca=0
+          offline "$out/test_operational_cash.cjs" "$tmp/src" >"$tmp/cash.json" 2>"$tmp/cash.err" || ca=$?
+          test -s "$tmp/cash.json" || {
+            echo OP4A_NO_RECEIPT
+            "$nodebin" -e 'const s=require("node:fs").readFileSync(process.argv[1],"utf8");console.log(JSON.stringify({diagnostic:"OP4A_SETUP_FAILURE",safe:[...new Set((s.match(/(?:OP4_[A-Z_]+|ERR_ASSERTION|SyntaxError|ReferenceError|TypeError)/g)||[]))],frames:[...new Set([...s.matchAll(/(?:operational_cash_source|test_operational_cash)\.cjs:\d+:\d+/g)].map(x=>x[0]))]}));' "$tmp/cash.err"
+            exit 1
+          }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify(r));a.equal(r.scope,"OP4A_EFFECTIVE_CASH_SOURCE_LAB");a.equal(r.total,19);a.equal(r.pass,19);a.equal(new Set(r.rows.map(x=>x.id)).size,19);a.ok(r.rows.every(x=>x.pass));a.equal(r.manifest.parentSourceSha256,"a5212b19b079386063d27c2e0378186a68d41d17c413212fc85141fc3d5a0e0f");a.equal(r.manifest.rollbackByteExact,true);a.equal(r.manifest.physicalWrites,0);a.equal(r.manifest.certifiesP0,0);a.equal(r.manifest.deployable,false);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/cash.json"
+          test "$ca" = 0
           rb=0
           offline "$out/test_operational_reconciliation.cjs" "$tmp/src" >"$tmp/rb.json" 2>"$tmp/rb.err" || rb=$?
           test -s "$tmp/rb.json" || {
@@ -154,4 +251,12 @@ jobs:
           }
           "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify(r));a.equal(r.scope,"D14_OP1B_SOURCE_LAB");a.equal(r.total,18);a.equal(r.pass,18);a.equal(r.rows.length,18);a.equal(new Set(r.rows.map(x=>x.id)).size,18);a.ok(r.rows.every(x=>x.pass));a.equal(r.manifest.parentSourceSha256,"4e97f6b0c32211c881730943db544eaef5bcd7bf40912a1ecfdcd573702de53e");a.equal(r.manifest.callersLegacyRestantes,0);a.equal(r.manifest.rollbackByteExact,true);a.equal(r.manifest.physicalWrites,0);a.equal(r.manifest.certifiesP0,0);a.equal(r.manifest.deployable,false);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/h3.json"
           test "$h3" = 0
-          echo D14_OP1B_18_PLUS_179_TARGETED_LAB_NO_W_NO_GAS_NO_DEPLOY
+          for mode in congelado parcheado; do
+            if [ "$mode" = congelado ]; then dir="$tmp/parent/lab/trade-integrated-baseline"; else dir="$out"; fi
+            g=0
+            offline "$out/test_d14_stop_gate.cjs" "$dir" "$mode" "$tmp/g-$mode.json" >"$tmp/g-$mode.out" 2>"$tmp/g-$mode.err" || g=$?
+            test -s "$tmp/g-$mode.json" || { echo D14_PG1_NO_RECEIPT; exit 1; }
+            "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify(r));a.equal(r.scope,"D14_A2_STOP_GATE_LAB");a.equal(r.modo,process.argv[2]);a.equal(r.total,15);a.equal(r.pass,15);a.equal(r.filas.length,15);a.equal(new Set(r.filas.map(x=>x.id)).size,15);a.ok(r.filas.every(x=>x.pass));a.equal(r.physicalWrites,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");a.equal(r.proyector,"1d8e27268e10740467c64ba650f73e48b01f8ef1c11f1ec4fcec8f1b5e9c2d40");if(r.modo==="congelado")a.equal(r.autoridad,"f3895a4d40bf077b07453b2202a0c5b077d9765d1ffcb642de468ed42e8725b2");else a.notEqual(r.autoridad,"f3895a4d40bf077b07453b2202a0c5b077d9765d1ffcb642de468ed42e8725b2");' "$tmp/g-$mode.json" "$mode"
+            test "$g" = 0
+          done
+          echo D14_PG1_PLUS_473_REGRESSION_15_PARENT_15_CANDIDATE_10_MUTANTS_LAB_NO_W_NO_GAS_NO_DEPLOY
