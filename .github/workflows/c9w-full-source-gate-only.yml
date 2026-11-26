@@ -1,4 +1,4 @@
-name: TRADE D14 PT plus OP3c-T full baseline LAB
+name: TRADE OP3c-Q1 full baseline LAB
 on:
   push:
     branches: ['audit/c9w-full-source-gate-only']
@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: 53f9b2552513e2299182164bf1b84f6adba34188
+          ref: 5068555c99bb8afb102bbc20ed60530f049e8815
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
@@ -64,7 +64,7 @@ jobs:
           set -euo pipefail
           test "$(git -C private-source rev-parse HEAD)" = 36ec5545a504f2a8031c4d1754d1fc36675e8f63
           test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
-          test "$(git -C private-lab rev-parse HEAD)" = 53f9b2552513e2299182164bf1b84f6adba34188
+          test "$(git -C private-lab rev-parse HEAD)" = 5068555c99bb8afb102bbc20ed60530f049e8815
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 977e92fb62c164787581db3eaa5644f1ae68e534
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_buy_source.cjs)" = bb753f755868c7c1610a4e9f18bc111b8663f177
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_recovery_source.cjs)" = a0cff670b27567d1558794114e06506e79d9b83e
@@ -96,6 +96,8 @@ jobs:
           test "$(git -C private-parent rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 901d8a294181b7c3ab3c455a208c411cab9c16fc
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_op3c_source.cjs)" = 4e4fcffb3fdf27064b3c85b487134b4526fb6b40
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_d14_op3c_trail.cjs)" = 90eddf3f7d028eefd14d245afc04e343288af5e4
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_queue_source.cjs)" = c10a8c778906e4d13fb88234b22900e83cfff677
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_queue.cjs)" = 37faf302dff90d1278089df2271ecf39757791f2
           tmp=$(mktemp -d)
           trap 'rm -rf "$tmp"' EXIT
           mkdir "$tmp/src" "$tmp/gate" "$tmp/home" "$tmp/auditor" "$tmp/parent"
@@ -271,3 +273,13 @@ jobs:
           "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:r.scope,politica:r.politica,manifest:r.manifest,autoridad:r.autoridad,pass:r.pass,total:r.total,rows:r.rows.map(x=>({id:x.id,pass:x.pass,error:x.error,detail:x.pass?undefined:x.detail,parity:x.id.startsWith("C15")&&x.pass?{oraculoSha256:x.evidencia.oraculoSha256,sesiones:x.evidencia.sesiones,nivelParidadIdentico:x.evidencia.nivelParidadIdentico,sesionesConservadoras:x.evidencia.sesionesConservadoras,decisionesIguales:x.evidencia.decisionesIguales,primeraSalidaBacktest:x.evidencia.primeraSalidaBacktest,primeraRupturaAutorizada:x.evidencia.primeraRupturaAutorizada}:undefined})),W:r.W}));a.equal(r.scope,"D14_B1_OP3C_TRAIL_LAB");a.equal(r.politica,"TRINQUETE");a.equal(r.total,21);a.equal(r.pass,21);a.equal(new Set(r.rows.map(x=>x.id)).size,21);a.ok(r.rows.every(x=>x.pass));a.equal(r.manifest.parentSourceSha256,"a9184150605344f31c3e02b8781b88f42bb298bde1bcf8e95486ec913e85ce22");a.equal(r.manifest.rollbackByteExact,true);a.equal(r.manifest.deployable,false);a.equal(r.manifest.transportInstalled,false);a.equal(r.manifest.certifiesP0,0);a.equal(r.physicalWrites,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/pt.json"
           test "$pt" = 0
           echo D14_PT_PLUS_488_REGRESSION_15_PARENT_21_TRAIL_10_MUTANTS_LAB_NO_W_NO_GAS_NO_DEPLOY
+          q=0
+          offline "$out/test_operational_queue.cjs" "$tmp/src" >"$tmp/q.json" 2>"$tmp/q.err" || q=$?
+          test -s "$tmp/q.json" || {
+            echo OP3CQ_NO_RECEIPT
+            "$nodebin" -e 'const s=require("node:fs").readFileSync(process.argv[1],"utf8");console.log(JSON.stringify({diagnostic:"OP3CQ_SETUP_FAILURE",safe:[...new Set((s.match(/(?:OP3CQ_[A-Z_]+|ERR_ASSERTION|SyntaxError|ReferenceError|TypeError|MODULE_NOT_FOUND)/g)||[]))],frames:[...new Set([...s.matchAll(/(?:operational_queue_source|test_operational_queue)\.cjs:\d+:\d+/g)].map(x=>x[0]))]}));' "$tmp/q.err"
+            exit 1
+          }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:r.scope,manifest:r.manifest,pass:r.pass,total:r.total,rows:r.rows.map(x=>({id:x.id,pass:x.pass,error:x.error})),W:r.W}));a.equal(r.scope,"OP3CQ1_QUEUE_OBSERVATION_LAB");a.equal(r.total,22);a.equal(r.pass,22);a.equal(r.rows.length,22);a.equal(new Set(r.rows.map(x=>x.id)).size,22);a.ok(r.rows.every(x=>x.pass));a.equal(r.manifest.parentSourceSha256,"8401d40828ce61554d906ac3d6405ee17c2446bc82d12431608812df7140ac5d");a.equal(r.manifest.rollbackByteExact,true);a.equal(r.manifest.physicalWrites,0);a.equal(r.manifest.certifiesP0,0);a.equal(r.manifest.transportInstalled,false);a.equal(r.manifest.deployable,false);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/q.json"
+          test "$q" = 0
+          echo OP3CQ1_509_REGRESSION_15_PARENT_22_QUEUE_10_MUTANTS_LAB_NO_W_NO_GAS_NO_DEPLOY
