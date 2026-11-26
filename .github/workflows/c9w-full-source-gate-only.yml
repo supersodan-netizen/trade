@@ -72,7 +72,11 @@ jobs:
           test "$arc" = 0
           brc=0
           offline "$out/tx2b_authentic_with_projection.cjs" "$tmp/src" --op2 >"$tmp/buy.json" 2>"$tmp/buy.err" || brc=$?
-          test -s "$tmp/buy.json" || { echo OP2_NO_RECEIPT; exit 1; }
+          test -s "$tmp/buy.json" || {
+            echo OP2_NO_RECEIPT
+            "$nodebin" -e 'const s=require("node:fs").readFileSync(process.argv[1],"utf8");const safe=[...new Set((s.match(/(?:OP2_[A-Z_]+|ERR_ASSERTION|SyntaxError|ReferenceError|TypeError|ERR_SQLITE_ERROR)/g)||[]))];const frames=[...s.matchAll(/(?:operational_buy_source|tx2b_authentic_with_projection|operational_recovery_source)\.cjs:\d+:\d+/g)].map(x=>x[0]);console.log(JSON.stringify({diagnostic:"OP2_SETUP_FAILURE",safe,frames:[...new Set(frames)]}));' "$tmp/buy.err"
+            exit 1
+          }
           "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs");const r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:r.scope,manifest:r.manifest,pass:r.rows.filter(x=>x.pass).length,total:r.rows.length,failed:r.rows.filter(x=>!x.pass).map(x=>({mode:x.mode,raw:x.raw,port:x.port,prepare:x.prepare,commit:x.commit,reads:x.readbacks,queueReads:x.queueReads,commits:x.commits,receiptClass:x.receiptClass,secondClass:x.secondClass,exception:x.exception,reason:x.reason})),W:r.W}));a.equal(r.scope,"OP2_OPERATIONAL_BUY_SOURCE_LAB");a.equal(r.parentSha256,"1a53990ba686649cc50de6c8bc1565b87696d0edfaa604f3d4b5770819783d72");a.equal(r.rows.length,26);a.equal(new Set(r.rows.map(x=>x.mode)).size,26);a.ok(r.rows.every(x=>x.pass));a.equal(r.manifest.rollbackByteExact,true);a.equal(r.manifest.transportInstalled,false);a.equal(r.manifest.deployable,false);a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.projectionCompletePhysical,false);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/buy.json"
           test "$brc" = 0
           echo OP2_26_PLUS_12_OP1_PLUS_12_BUY_TARGETED_LAB_NO_W_NO_GAS_NO_DEPLOY
