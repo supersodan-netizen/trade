@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: 1fd5b99f928366d078552e002b67efc4633b86b5
+          ref: 6ad6c34d6bb565f42d4e304a8fb5956a1a7e1001
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
@@ -42,7 +42,7 @@ jobs:
           set -euo pipefail
           test "$(git -C private-source rev-parse HEAD)" = 36ec5545a504f2a8031c4d1754d1fc36675e8f63
           test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
-          test "$(git -C private-lab rev-parse HEAD)" = 1fd5b99f928366d078552e002b67efc4633b86b5
+          test "$(git -C private-lab rev-parse HEAD)" = 6ad6c34d6bb565f42d4e304a8fb5956a1a7e1001
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 901d8a294181b7c3ab3c455a208c411cab9c16fc
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_projection_lab.cjs)" = 072314c266060fae7a3442eb12e1f1792a81c1ec
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_recovery_source.cjs)" = a0cff670b27567d1558794114e06506e79d9b83e
@@ -66,7 +66,7 @@ jobs:
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_reconciliation_source.cjs)" = 5279c2f2ba0ec4d52c25f401b1206a817c57e50e
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_reconciliation.cjs)" = 7de01239271c6c0678583fa69df599965bc20db7
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_receipt_source.cjs)" = 2f93b803cc0c0125e4b1960a3e39a8a812a7c3a6
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_receipt.cjs)" = 87feda21b395a80252ad7d569f1f3eb769fa8d43
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_receipt.cjs)" = faf8214a82ca5d64b773864c816ad26b4dc87590
           tmp=$(mktemp -d)
           trap 'rm -rf "$tmp"' EXIT
           mkdir "$tmp/src" "$tmp/gate" "$tmp/home"
