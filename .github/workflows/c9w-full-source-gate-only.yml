@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: 8f05aee04c3826d63c86473d70ee95a5293cd460
+          ref: 53f9b2552513e2299182164bf1b84f6adba34188
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
@@ -64,7 +64,7 @@ jobs:
           set -euo pipefail
           test "$(git -C private-source rev-parse HEAD)" = 36ec5545a504f2a8031c4d1754d1fc36675e8f63
           test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
-          test "$(git -C private-lab rev-parse HEAD)" = 8f05aee04c3826d63c86473d70ee95a5293cd460
+          test "$(git -C private-lab rev-parse HEAD)" = 53f9b2552513e2299182164bf1b84f6adba34188
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 977e92fb62c164787581db3eaa5644f1ae68e534
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_buy_source.cjs)" = bb753f755868c7c1610a4e9f18bc111b8663f177
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_recovery_source.cjs)" = a0cff670b27567d1558794114e06506e79d9b83e
@@ -94,7 +94,7 @@ jobs:
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_d14_stop_gate.cjs)" = d62d732aeedc32967152bf47160d9015c15c24c4
           test "$(git -C private-parent rev-parse HEAD)" = ce66089b1b051870d792346ac58f71394202b6b7
           test "$(git -C private-parent rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 901d8a294181b7c3ab3c455a208c411cab9c16fc
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_op3c_source.cjs)" = 0d7f164527c2c0b46ddc772f5e9fbea3d46184fc
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_op3c_source.cjs)" = 4e4fcffb3fdf27064b3c85b487134b4526fb6b40
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_d14_op3c_trail.cjs)" = 90eddf3f7d028eefd14d245afc04e343288af5e4
           tmp=$(mktemp -d)
           trap 'rm -rf "$tmp"' EXIT
