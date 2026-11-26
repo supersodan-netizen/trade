@@ -1,4 +1,4 @@
-name: TRADE OP4a effective cash source LAB
+name: TRADE OP4b reconciliation source LAB
 on:
   push:
     branches: ['audit/c9w-full-source-gate-only']
@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: ca0f3268e6611bc1bc7e08b863262080104fc09e
+          ref: ed0deb8f6a710207979d4cdf9ed2acfa600f3227
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
@@ -36,13 +36,13 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - name: OP4a effective cash and targeted regressions offline
+      - name: OP4b reconciliation and targeted regressions offline
         shell: bash
         run: |
           set -euo pipefail
           test "$(git -C private-source rev-parse HEAD)" = 36ec5545a504f2a8031c4d1754d1fc36675e8f63
           test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
-          test "$(git -C private-lab rev-parse HEAD)" = ca0f3268e6611bc1bc7e08b863262080104fc09e
+          test "$(git -C private-lab rev-parse HEAD)" = ed0deb8f6a710207979d4cdf9ed2acfa600f3227
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 901d8a294181b7c3ab3c455a208c411cab9c16fc
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_projection_lab.cjs)" = 072314c266060fae7a3442eb12e1f1792a81c1ec
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_recovery_source.cjs)" = a0cff670b27567d1558794114e06506e79d9b83e
@@ -63,6 +63,8 @@ jobs:
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_recovery_scan.cjs)" = 22488b7b86c52c49b1c9bc1df7006ca7cc3c32cb
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_rs2c3_mutants.cjs)" = f7a7e0b08afe82ff2f13c0804a12637235177cb0
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_tx2b_projection.cjs)" = 4b4118d7b726d6adca83ced3770be594205d45d6
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_reconciliation_source.cjs)" = 5279c2f2ba0ec4d52c25f401b1206a817c57e50e
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_reconciliation.cjs)" = 7de01239271c6c0678583fa69df599965bc20db7
           tmp=$(mktemp -d)
           trap 'rm -rf "$tmp"' EXIT
           mkdir "$tmp/src" "$tmp/gate" "$tmp/home"
@@ -121,4 +123,13 @@ jobs:
           test -s "$tmp/pb.json" || { echo OP3_PB_NO_RECEIPT; exit 1; }
           "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs");const r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:"D13_PB_STOP_SENTINEL_LAB",pass:r.pass,total:r.total,failed:r.filas.filter(x=>!x.pass).map(x=>x.id)}));a.equal(r.modo,"pb");a.equal(r.pass,13);a.equal(r.total,13);a.ok(r.filas.every(x=>x.pass));a.equal(r.modulo.autoridad,"f3895a4d40bf077b07453b2202a0c5b077d9765d1ffcb642de468ed42e8725b2");' "$tmp/pb.json"
           test "$prc" = 0
-          echo OP4A_19_PLUS_14_OP3B_PLUS_81_TARGETED_LAB_NO_W_NO_GAS_NO_DEPLOY
+          rb=0
+          offline "$out/test_operational_reconciliation.cjs" "$tmp/src" >"$tmp/rb.json" 2>"$tmp/rb.err" || rb=$?
+          test -s "$tmp/rb.json" || {
+            echo OP4B_NO_RECEIPT
+            "$nodebin" -e 'const s=require("node:fs").readFileSync(process.argv[1],"utf8");console.log(JSON.stringify({diagnostic:"OP4B_SETUP_FAILURE",safe:[...new Set((s.match(/(?:OP4B_[A-Z_]+|ERR_ASSERTION|SyntaxError|ReferenceError|TypeError)/g)||[]))],frames:[...new Set([...s.matchAll(/(?:operational_reconciliation_source|test_operational_reconciliation)\.cjs:\d+:\d+/g)].map(x=>x[0]))]}));' "$tmp/rb.err"
+            exit 1
+          }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify(r));a.equal(r.scope,"OP4B_RECONCILIATION_SOURCE_LAB");a.equal(r.total,30);a.equal(r.pass,30);a.equal(r.rows.length,30);a.equal(new Set(r.rows.map(x=>x.id)).size,30);a.ok(r.rows.every(x=>x.pass));a.equal(r.manifest.parentSourceSha256,"cfa3b6a098cd2048e464984e8c9739f5f1118bace3e580a5e2bd41e1e352edb0");a.equal(r.manifest.rollbackByteExact,true);a.equal(r.manifest.physicalWrites,0);a.equal(r.manifest.certifiesP0,0);a.equal(r.manifest.transportInstalled,false);a.equal(r.manifest.deployable,false);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/rb.json"
+          test "$rb" = 0
+          echo OP4B_30_PLUS_114_TARGETED_LAB_NO_W_NO_GAS_NO_DEPLOY
