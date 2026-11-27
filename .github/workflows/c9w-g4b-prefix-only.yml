@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: 18f1da2f8b0cc619c3c1b9be83452dfba1136322
+          ref: dc737c097edfe2caf80d26912cd4e136b609f4c0
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
@@ -53,7 +53,7 @@ jobs:
           set -euo pipefail
           test "$(git -C private-source rev-parse HEAD)" = f7a0c17a6979c4cedcb5f077fb331e991e56941e
           test "$(git -C private-audit rev-parse HEAD)" = 08496f786a2233c4633ed7224410d8165a906a0d
-          test "$(git -C private-lab rev-parse HEAD)" = 18f1da2f8b0cc619c3c1b9be83452dfba1136322
+          test "$(git -C private-lab rev-parse HEAD)" = dc737c097edfe2caf80d26912cd4e136b609f4c0
           test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
           tmp=$(mktemp -d)
           trap 'rm -rf "$tmp"' EXIT
@@ -105,6 +105,6 @@ jobs:
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4a_stop_close_native_lab.cjs)" = 358b63015c83561dc843d2e0e3d5d388434e1f1c
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_projection_lab.cjs)" = feac050c4690346ecc4cf062a85555ad5537be3f
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_economic_prefix_lab.cjs)" = 72b7b92f34708ec3d8108eacfd79df1bfa91ec53
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b_economic_prefix_lab.cjs)" = dcfc29e7dbb301a1b1dd4b5ba05841ed1d72bd58
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b_economic_prefix_lab.cjs)" = 0d47d34446c5d9990535b936d8d3a9018d576159
           run_suite g4bp 8 "$lab/test_g4b_economic_prefix_lab.cjs" "$src" "$out/g4bp.json"
           echo G4B_PREFIX_8_FOCAL_LAB_NO_W_NO_GAS_NO_DEPLOY
