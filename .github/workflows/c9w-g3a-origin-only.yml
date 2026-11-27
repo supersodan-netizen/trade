@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: 25ae02a861c3bdad77ad5b75fa62384f4b00c8c4
+          ref: 85846bce02f7a34e9b75119a3f1ee26f8e8d21e6
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
@@ -53,7 +53,7 @@ jobs:
           set -euo pipefail
           test "$(git -C private-source rev-parse HEAD)" = f7a0c17a6979c4cedcb5f077fb331e991e56941e
           test "$(git -C private-audit rev-parse HEAD)" = 08496f786a2233c4633ed7224410d8165a906a0d
-          test "$(git -C private-lab rev-parse HEAD)" = 25ae02a861c3bdad77ad5b75fa62384f4b00c8c4
+          test "$(git -C private-lab rev-parse HEAD)" = 85846bce02f7a34e9b75119a3f1ee26f8e8d21e6
           test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
           tmp=$(mktemp -d)
           trap 'rm -rf "$tmp"' EXIT
@@ -82,7 +82,7 @@ jobs:
           echo "PA1_AUTHORITY_SHA256 $(sha256sum "$lab/authority_c9w_tx1_d10.cjs" | cut -d' ' -f1)"
           echo "PA1_RESIDENT_SHA256 $(sha256sum "$lab/d18_stop_residente_lab.cjs" | cut -d' ' -f1)"
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_sale_origin_lab.cjs)" = b1f189205b8cd7e649e1a466c75931d6142136e8
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g3a_stop_sale_origin_lab.cjs)" = 67fa6e949b8c1f99be3377f0c73e3689a4c04dad
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g3a_stop_sale_origin_lab.cjs)" = a3733706215c5145f6f2419c07e6a2998bab0621
           echo "G3_ORIGIN_SHA256 $(sha256sum "$lab/operational_stop_sale_origin_lab.cjs" | cut -d' ' -f1)"
           echo "G3_INPUT_FIXTURE_SHA256 $(sha256sum "$lab/test_operational_settlement_input_lab.cjs" | cut -d' ' -f1)"
           # Each suite runs once; always retain a sanitized receipt, never print source or error stacks.
