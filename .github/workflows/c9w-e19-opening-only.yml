@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: e93f224ad5982364c00c5b8546893abdb05fced9
+          ref: 57a97d79168d8810ab55d6bb57667d6c26dd555b
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
@@ -42,7 +42,7 @@ jobs:
           set -euo pipefail
           test "$(git -C private-source rev-parse HEAD)" = 36ec5545a504f2a8031c4d1754d1fc36675e8f63
           test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
-          test "$(git -C private-lab rev-parse HEAD)" = e93f224ad5982364c00c5b8546893abdb05fced9
+          test "$(git -C private-lab rev-parse HEAD)" = 57a97d79168d8810ab55d6bb57667d6c26dd555b
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 93dbd54a0ee9ef912f7ab361dc811a5d74e84ac2
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_buy_source.cjs)" = bb753f755868c7c1610a4e9f18bc111b8663f177
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_recovery_source.cjs)" = a0cff670b27567d1558794114e06506e79d9b83e
@@ -108,7 +108,7 @@ jobs:
 
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_settlement_input_lab.cjs)" = a69322b6aed14db68f79be94100d970b84ac925e
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_e19_opening_lab.cjs)" = 5cf3b44b3734760a89a0697fbf4c6aa9ce3bbbbe
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_e19_opening_lab.cjs)" = 5edd985b9f8d5aaee53457dc115460e39081de18
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_e19_opening_lab.cjs)" = 23bb4b2351eadf7024cc64ccacc81186efbbb9f7
           rc=0
           offline "$out/test_operational_e19_opening_lab.cjs" "$tmp/src" >"$tmp/e19.json" 2>"$tmp/e19.err" || rc=$?
           test -s "$tmp/e19.json" || {
