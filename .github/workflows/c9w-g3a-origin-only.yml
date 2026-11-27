@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: 85846bce02f7a34e9b75119a3f1ee26f8e8d21e6
+          ref: a9e55f05675ba734dfbda355f1c9e0d02ef8bfc4
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
@@ -53,7 +53,7 @@ jobs:
           set -euo pipefail
           test "$(git -C private-source rev-parse HEAD)" = f7a0c17a6979c4cedcb5f077fb331e991e56941e
           test "$(git -C private-audit rev-parse HEAD)" = 08496f786a2233c4633ed7224410d8165a906a0d
-          test "$(git -C private-lab rev-parse HEAD)" = 85846bce02f7a34e9b75119a3f1ee26f8e8d21e6
+          test "$(git -C private-lab rev-parse HEAD)" = a9e55f05675ba734dfbda355f1c9e0d02ef8bfc4
           test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
           tmp=$(mktemp -d)
           trap 'rm -rf "$tmp"' EXIT
@@ -81,8 +81,8 @@ jobs:
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/d18_stop_residente_lab.cjs)" = 9c328f761e65b85c5ecb7b3c0f6c523d5dd61063
           echo "PA1_AUTHORITY_SHA256 $(sha256sum "$lab/authority_c9w_tx1_d10.cjs" | cut -d' ' -f1)"
           echo "PA1_RESIDENT_SHA256 $(sha256sum "$lab/d18_stop_residente_lab.cjs" | cut -d' ' -f1)"
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_sale_origin_lab.cjs)" = b1f189205b8cd7e649e1a466c75931d6142136e8
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g3a_stop_sale_origin_lab.cjs)" = a3733706215c5145f6f2419c07e6a2998bab0621
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_sale_origin_lab.cjs)" = f6775076edeacd21d60ebb5d67cc2c81e38ee760
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g3a_stop_sale_origin_lab.cjs)" = 04960835d68db5f8bd571becf31123fb06e70c82
           echo "G3_ORIGIN_SHA256 $(sha256sum "$lab/operational_stop_sale_origin_lab.cjs" | cut -d' ' -f1)"
           echo "G3_INPUT_FIXTURE_SHA256 $(sha256sum "$lab/test_operational_settlement_input_lab.cjs" | cut -d' ' -f1)"
           # Each suite runs once; always retain a sanitized receipt, never print source or error stacks.
@@ -97,10 +97,10 @@ jobs:
             fi
             test "$rc" = 0
           }
-          run_suite g3 22 "$lab/test_g3a_stop_sale_origin_lab.cjs" "$src" "$out/g3.json"
+          run_suite g3 24 "$lab/test_g3a_stop_sale_origin_lab.cjs" "$src" "$out/g3.json"
           run_suite r1 28 "$lab/test_d18_resident_r1.cjs" "$src" "$audit" "$lab/d18_stop_residente_lab.cjs" "$out/r1.json"
           run_suite native 12 "$lab/test_pa1_integrated_lab.cjs" "$out/native.json"
           run_suite sb 14 "$lab/test_operational_stop_admission.cjs"
           run_suite ledger 18 "$lab/test_operational_settlement_ledger_lab.cjs" "$src"
           run_suite input 34 "$lab/test_operational_settlement_input_lab.cjs" "$src"
-          echo G3A_128_FOCAL_NATIVE_LAB_NO_W_NO_GAS_NO_DEPLOY
+          echo G3A_R1_130_FOCAL_NATIVE_LAB_NO_W_NO_GAS_NO_DEPLOY
