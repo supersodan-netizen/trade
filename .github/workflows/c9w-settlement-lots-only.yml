@@ -1,0 +1,122 @@
+name: TRADE OP4b2b4b signed settlement lots LAB
+on:
+  push:
+    branches: ['audit/c9w-full-source-gate-only']
+    paths: ['.github/workflows/c9w-settlement-lots-only.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.repository == 'supersodan-netizen/trade'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Pinned canonical source read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: 36ec5545a504f2a8031c4d1754d1fc36675e8f63
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-source
+      - name: Pinned private materialized baseline read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: e25d59184501dff41035fb4d936f2cb990a97b38
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-lab
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: OP4b2b4b signed lots, cost and realized PnL
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C private-source rev-parse HEAD)" = 36ec5545a504f2a8031c4d1754d1fc36675e8f63
+          test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
+          test "$(git -C private-lab rev-parse HEAD)" = e25d59184501dff41035fb4d936f2cb990a97b38
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 9fc464cd8aadc1eb60a27882edcbebf8b993ef1b
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_buy_source.cjs)" = bb753f755868c7c1610a4e9f18bc111b8663f177
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_recovery_source.cjs)" = a0cff670b27567d1558794114e06506e79d9b83e
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_source.cjs)" = 6f6fde50fcf7507c64131f3a5de18527ced1b3d0
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/q2_fixture_lab.cjs)" = e54a79779c726765b550cbfd53cda8162a418e7e
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_d12_r16_r19.cjs)" = c8fc580a987e6ec5e03acd4e8a35512922cf7c97
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_d12_t9.cjs)" = eb196904a8d1e38e5131a10cf94fd39c6e87baf3
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_recovery.cjs)" = d8a76904d8b73202663847da7468e8c75bf6d5ce
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_stop.cjs)" = 96d4b6b2197370ecdb8904a705c8889c2e6a3c07
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_stop_admission.cjs)" = 28d496cf75a06fd79814735ac4ae43e5b6d8b303
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_pb_stop.cjs)" = 3d5291877e97099568757d07dab6e59caede1730
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_q1.cjs)" = e86bf304ef0f94f222b0e0f42370a32cc2d7b700
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_q2.cjs)" = e2ac7b1ceb233ffbc9ee1c69f7dba2f0a92a727e
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_recovery_scan.cjs)" = 0597c0571143e694293722776a6abd4da874990c
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_rs2c3_mutants.cjs)" = f7a7e0b08afe82ff2f13c0804a12637235177cb0
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_tx2b_projection.cjs)" = 4b4118d7b726d6adca83ced3770be594205d45d6
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_authentic_with_projection.cjs)" = aa1644aaf9dbbdf579b4bca51d61a1c63320bc6c
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_projection_lab.cjs)" = feac050c4690346ecc4cf062a85555ad5537be3f
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_cash_source.cjs)" = c0c15470a3360723866b21ea6cd133b81d1d4257
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_cash.cjs)" = c2f7b1efc1ecff7d4b3cafabb9a77081a249f9f3
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_reconciliation_source.cjs)" = 5279c2f2ba0ec4d52c25f401b1206a817c57e50e
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_reconciliation.cjs)" = 7de01239271c6c0678583fa69df599965bc20db7
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_receipt_source.cjs)" = 2f93b803cc0c0125e4b1960a3e39a8a812a7c3a6
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_receipt.cjs)" = faf8214a82ca5d64b773864c816ad26b4dc87590
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_recovery_callers_source.cjs)" = 5b9182ab7eb88389a89ff2d1b585f2b523ead200
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_recovery_callers.cjs)" = 2936db8ee1c7760298d80afaaf3f887b2739eace
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_d14_stop_gate.cjs)" = 12ff993f6251a62203956eb62a911139f1dfd038
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_op3c_source.cjs)" = 4e4fcffb3fdf27064b3c85b487134b4526fb6b40
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_d14_op3c_trail.cjs)" = 90eddf3f7d028eefd14d245afc04e343288af5e4
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_queue_source.cjs)" = c10a8c778906e4d13fb88234b22900e83cfff677
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_queue.cjs)" = 37faf302dff90d1278089df2271ecf39757791f2
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_queue_projection_source.cjs)" = 6adb2489214c4979997d480ab7dda5143546dbe2
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_queue_projection.cjs)" = 0720bf2906e1b04e59e7ca47ac8661463e99d4ba
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_d15_h5_ready.cjs)" = b3f5b73eb732d2f2002a8c1fcefb108484bfd7c9
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_queue_adversarial.cjs)" = 8286fa01a7f96e62788bc883b26979d3ccb2bac9
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_buy_preflight_h6_source.cjs)" = 455b25a0132e70bd73132e74aa949aca11c5b912
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/d15_gas_effects_fixture.cjs)" = a0dc15eed353e3a803e3d2fa8ee007ea39ea3cd6
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_buy_preflight_h6.cjs)" = 074b4a10a164b2df3df18cda88eabebdf47cce93
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_settlement_plan_lab.cjs)" = fde48b1ef28420b45eb7ba7013477763417a4555
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_settlement_plan_lab.cjs)" = d99d32f0988b0d4af740098d64ecb14a02c8c5e6
+          tmp=$(mktemp -d)
+          trap 'rm -rf "$tmp"' EXIT
+          mkdir "$tmp/src" "$tmp/gate" "$tmp/home"
+          git -C private-source archive HEAD candidate scripts docs tests lab | tar -x -C "$tmp/src"
+          git -C private-lab archive HEAD lab/c9w-full-d11-x03 lab/c9w-full-d11-strict-q1 lab/trade-integrated-baseline | tar -x -C "$tmp/gate"
+          test -z "$(find "$tmp/src" "$tmp/gate" -type f \( -name '.clasp*' -o -name '.env*' -o -name '*.pem' \) -print -quit)"
+          nodebin=$(command -v node)
+          out="$tmp/gate/lab/trade-integrated-baseline"
+          offline() {
+            sudo unshare --net -- setpriv --reuid="$(id -u)" --regid="$(id -g)" --clear-groups env -i PATH=/usr/bin:/bin HOME="$tmp/home" "$nodebin" "$@"
+          }
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_settlement_ledger_lab.cjs)" = 8b4a8ecb7252575983c9256b1d7c8ebfdfd62b4c
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_settlement_ledger_lab.cjs)" = 00bebe73d098af5d656bf342d4bd159479c749ad
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_settlement_lots_lab.cjs)" = 1205e0266c271124b950ff41b8c717338226502e
+          for f in "$out"/*.cjs; do offline --check "$f" >/dev/null 2>&1 || { echo "OP4B2B2_SYNTAX_FAILED $(basename "$f")"; exit 1; }; done
+          echo "OP4B2B2_AUTHORITY_SHA256 $(sha256sum "$out/authority_c9w_tx1_d10.cjs" | cut -d' ' -f1)"
+          echo "OP4B2B2_PROJECTOR_SHA256 $(sha256sum "$out/tx2b_projection_lab.cjs" | cut -d' ' -f1)"
+
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_settlement_projection_lab.cjs)" = 6d35d057ea65089e4bc40da776c22c14f9964e06
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_settlement_projection_lab.cjs)" = 7b5952e66ccb1e295bd186c9215fbc3ee84bdf34
+          test "$(sha256sum "$out/authority_c9w_tx1_d10.cjs" | cut -d' ' -f1)" = e6420ce4561839c7c28ae9c9967ab95a5877912817394b7c111c9f21dd2fc112
+          test "$(sha256sum "$out/tx2b_projection_lab.cjs" | cut -d' ' -f1)" = 825156cbc5b2a093d8b35b304b614c759f23e3eadceb56482b1876f786db8cec
+
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_settlement_input_lab.cjs)" = 2e7d0c09c79b2f1f083223662ad034d2c7539a67
+          for spec in "plan:16:OP4B2B1_SETTLEMENT_PLAN_LAB" "ledger:18:OP4B2B2_DURABLE_LEDGER_LAB" "projection:14:OP4B2B3_SETTLEMENT_PROJECTION_LAB" "input:23:OP4B2B4B_SIGNED_LOTS_LAB"; do
+            IFS=: read -r part count scope <<< "$spec"
+            rc=0
+            offline "$out/test_operational_settlement_${part}_lab.cjs" "$tmp/src" >"$tmp/result-$part.json" 2>"$tmp/result-$part.err" || rc=$?
+            test -s "$tmp/result-$part.json" || {
+              echo "OP4B2B4B_NO_RECEIPT $part"
+              "$nodebin" -e 'const s=require("node:fs").readFileSync(process.argv[1],"utf8");console.log(JSON.stringify({diagnostic:"OP4B2B4B_SETUP_FAILURE",safe:[...new Set(s.match(/(?:TRL_[A-Z0-9_]+|TRP_[A-Z0-9_]+|TR_[A-Z0-9_]+|OP4B2B_[A-Z0-9_]+|ERR_ASSERTION|SyntaxError|ReferenceError|TypeError|MODULE_NOT_FOUND)/g)||[])],frames:[...new Set([...s.matchAll(/(?:operational_settlement_[a-z_]+)\.cjs:\d+:\d+/g)].map(x=>x[0]))]}));' "$tmp/result-$part.err"
+              exit 1
+            }
+            "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1])),n=Number(process.argv[2]),s=process.argv[3];console.log(JSON.stringify({scope:r.scope,pass:r.pass,total:r.total,rows:r.rows,W:r.W}));a.equal(r.scope,s);a.equal(r.total,n);a.equal(r.pass,n);a.equal(r.rows.length,n);a.equal(new Set(r.rows.map(x=>x.id)).size,n);a.ok(r.rows.every(x=>x.pass));a.equal(r.parentSourceSha256??r.manifest?.parentSourceSha256,"4c9b2296b62a0516909eb91e1a5c07edfe0aa16c7fb36f9f3d40ae3eda24b775");a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/result-$part.json" "$count" "$scope"
+            test "$rc" = 0
+          done
+          echo OP4B2B4B_16_PLAN_18_LEDGER_14_PROJECTION_23_INPUT_LOTS_LAB_NO_W_NO_GAS_NO_DEPLOY
