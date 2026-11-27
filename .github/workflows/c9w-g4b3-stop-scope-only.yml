@@ -85,7 +85,7 @@ jobs:
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g3a_stop_sale_origin_lab.cjs)" = 04960835d68db5f8bd571becf31123fb06e70c82
           echo "G3_ORIGIN_SHA256 $(sha256sum "$lab/operational_stop_sale_origin_lab.cjs" | cut -d' ' -f1)"
           echo "G3_INPUT_FIXTURE_SHA256 $(sha256sum "$lab/test_operational_settlement_input_lab.cjs" | cut -d' ' -f1)"
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_close_plan_lab.cjs)" = 8a4769b9df07262f60ecae4f21248808a72e260c
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_close_plan_lab.cjs)" = 499e8f79db7af576f6b864da4152fccf37dcf6d8
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g3b_stop_close_plan_lab.cjs)" = 6652e71220f273482bf6890da6561fcbdaa276a5
           echo "G3B_PLAN_SHA256 $(sha256sum "$lab/operational_stop_close_plan_lab.cjs" | cut -d' ' -f1)"
           # Each suite runs once; always retain a sanitized receipt, never print source or error stacks.
