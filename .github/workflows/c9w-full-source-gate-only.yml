@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: b817a9c60e3b6096cce0b0bbdf9539b818e9bb51
+          ref: 5e0865a8f7891dfe1b37802804dcce3573636d81
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
@@ -64,7 +64,7 @@ jobs:
           set -euo pipefail
           test "$(git -C private-source rev-parse HEAD)" = 36ec5545a504f2a8031c4d1754d1fc36675e8f63
           test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
-          test "$(git -C private-lab rev-parse HEAD)" = b817a9c60e3b6096cce0b0bbdf9539b818e9bb51
+          test "$(git -C private-lab rev-parse HEAD)" = 5e0865a8f7891dfe1b37802804dcce3573636d81
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 9d5c44fbe4afca645de37f6c6f705a8f0e5025eb
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_buy_source.cjs)" = bb753f755868c7c1610a4e9f18bc111b8663f177
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_recovery_source.cjs)" = a0cff670b27567d1558794114e06506e79d9b83e
@@ -91,7 +91,7 @@ jobs:
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_receipt.cjs)" = faf8214a82ca5d64b773864c816ad26b4dc87590
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_recovery_callers_source.cjs)" = 5b9182ab7eb88389a89ff2d1b585f2b523ead200
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_recovery_callers.cjs)" = 2936db8ee1c7760298d80afaaf3f887b2739eace
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_d14_stop_gate.cjs)" = 105174373c5eba0c2171800a8073a4cfef405100
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_d14_stop_gate.cjs)" = 12ff993f6251a62203956eb62a911139f1dfd038
           test "$(git -C private-parent rev-parse HEAD)" = ce66089b1b051870d792346ac58f71394202b6b7
           test "$(git -C private-parent rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 901d8a294181b7c3ab3c455a208c411cab9c16fc
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_op3c_source.cjs)" = 4e4fcffb3fdf27064b3c85b487134b4526fb6b40
