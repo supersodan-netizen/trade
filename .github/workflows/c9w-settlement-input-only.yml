@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: 7029604206de955d18bafd43308469093a671fe1
+          ref: fa8f4ec4c0f228a8ffc6d978b12dad8f32d59d98
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
@@ -42,7 +42,7 @@ jobs:
           set -euo pipefail
           test "$(git -C private-source rev-parse HEAD)" = 36ec5545a504f2a8031c4d1754d1fc36675e8f63
           test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
-          test "$(git -C private-lab rev-parse HEAD)" = 7029604206de955d18bafd43308469093a671fe1
+          test "$(git -C private-lab rev-parse HEAD)" = fa8f4ec4c0f228a8ffc6d978b12dad8f32d59d98
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 9fc464cd8aadc1eb60a27882edcbebf8b993ef1b
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_buy_source.cjs)" = bb753f755868c7c1610a4e9f18bc111b8663f177
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_recovery_source.cjs)" = a0cff670b27567d1558794114e06506e79d9b83e
@@ -94,7 +94,7 @@ jobs:
           offline() {
             sudo unshare --net -- setpriv --reuid="$(id -u)" --regid="$(id -g)" --clear-groups env -i PATH=/usr/bin:/bin HOME="$tmp/home" "$nodebin" "$@"
           }
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_settlement_ledger_lab.cjs)" = 68679336b88461127ab7e085971198ea24423205
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_settlement_ledger_lab.cjs)" = cff98b7a25bdf9616e68773f51d159f6a1e06805
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_settlement_ledger_lab.cjs)" = 00bebe73d098af5d656bf342d4bd159479c749ad
           for f in "$out"/*.cjs; do offline --check "$f" >/dev/null 2>&1 || { echo "OP4B2B2_SYNTAX_FAILED $(basename "$f")"; exit 1; }; done
           echo "OP4B2B2_AUTHORITY_SHA256 $(sha256sum "$out/authority_c9w_tx1_d10.cjs" | cut -d' ' -f1)"
@@ -105,8 +105,8 @@ jobs:
           test "$(sha256sum "$out/authority_c9w_tx1_d10.cjs" | cut -d' ' -f1)" = e6420ce4561839c7c28ae9c9967ab95a5877912817394b7c111c9f21dd2fc112
           test "$(sha256sum "$out/tx2b_projection_lab.cjs" | cut -d' ' -f1)" = 825156cbc5b2a093d8b35b304b614c759f23e3eadceb56482b1876f786db8cec
 
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_settlement_input_lab.cjs)" = 9ba5e92192012efcfc24bcb935078228ca7dbe60
-          for spec in "plan:16:OP4B2B1_SETTLEMENT_PLAN_LAB" "ledger:18:OP4B2B2_DURABLE_LEDGER_LAB" "projection:14:OP4B2B3_SETTLEMENT_PROJECTION_LAB" "input:12:OP4B2B4A_SIGNED_INPUT_LAB"; do
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_settlement_input_lab.cjs)" = 26602093564de7e0ad60b54992380568e6fd39e4
+          for spec in "plan:16:OP4B2B1_SETTLEMENT_PLAN_LAB" "ledger:18:OP4B2B2_DURABLE_LEDGER_LAB" "projection:14:OP4B2B3_SETTLEMENT_PROJECTION_LAB" "input:13:OP4B2B4A_SIGNED_INPUT_LAB"; do
             IFS=: read -r part count scope <<< "$spec"
             rc=0
             offline "$out/test_operational_settlement_${part}_lab.cjs" "$tmp/src" >"$tmp/result-$part.json" 2>"$tmp/result-$part.err" || rc=$?
@@ -118,4 +118,4 @@ jobs:
             "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1])),n=Number(process.argv[2]),s=process.argv[3];console.log(JSON.stringify({scope:r.scope,pass:r.pass,total:r.total,rows:r.rows,W:r.W}));a.equal(r.scope,s);a.equal(r.total,n);a.equal(r.pass,n);a.equal(r.rows.length,n);a.equal(new Set(r.rows.map(x=>x.id)).size,n);a.ok(r.rows.every(x=>x.pass));a.equal(r.parentSourceSha256??r.manifest?.parentSourceSha256,"4c9b2296b62a0516909eb91e1a5c07edfe0aa16c7fb36f9f3d40ae3eda24b775");a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/result-$part.json" "$count" "$scope"
             test "$rc" = 0
           done
-          echo OP4B2B4A_16_PLAN_18_LEDGER_14_PROJECTION_12_INPUT_LAB_NO_W_NO_GAS_NO_DEPLOY
+          echo OP4B2B4A_16_PLAN_18_LEDGER_14_PROJECTION_13_INPUT_LAB_NO_W_NO_GAS_NO_DEPLOY
