@@ -1,0 +1,102 @@
+name: TRADE D18 independent reproduction LAB
+on:
+  push:
+    branches: ['audit/c9w-full-source-gate-only']
+    paths: ['.github/workflows/c9w-d18-review-only.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.repository == 'supersodan-netizen/trade'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Pinned audited baseline read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: f7a0c17a6979c4cedcb5f077fb331e991e56941e
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-source
+      - name: Pinned auditor delivery read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: 08496f786a2233c4633ed7224410d8165a906a0d
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-audit
+      - name: Pinned team probe read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: e73cb120e1f5b270294c9af789b1b9ea9982f4c6
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-lab
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Verify manifest and reproduce D18 offline; no source in logs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C private-source rev-parse HEAD)" = f7a0c17a6979c4cedcb5f077fb331e991e56941e
+          test "$(git -C private-audit rev-parse HEAD)" = 08496f786a2233c4633ed7224410d8165a906a0d
+          test "$(git -C private-lab rev-parse HEAD)" = e73cb120e1f5b270294c9af789b1b9ea9982f4c6
+          test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
+          tmp=$(mktemp -d)
+          trap 'rm -rf "$tmp"' EXIT
+          mkdir "$tmp/src" "$tmp/audit" "$tmp/team" "$tmp/out" "$tmp/home"
+          git -C private-source archive HEAD candidate scripts docs tests lab | tar -x -C "$tmp/src"
+          git -C private-audit archive HEAD entregas/2026-11-27-D18 | tar -x -C "$tmp/audit"
+          git -C private-lab archive HEAD lab/trade-integrated-baseline/test_d18_review_probe.cjs | tar -x -C "$tmp/team"
+          test -z "$(find "$tmp/src" "$tmp/audit" "$tmp/team" -type f \( -name '.clasp*' -o -name '.env*' -o -name '*.pem' \) -print -quit)"
+          nodebin=$(command -v node)
+          audit="$tmp/audit/entregas/2026-11-27-D18"
+          src="$tmp/src"
+          out="$tmp/out"
+          offline() {
+            sudo unshare --net -- setpriv --reuid="$(id -u)" --regid="$(id -g)" --clear-groups env -i PATH="$(dirname "$nodebin"):/usr/bin:/bin" HOME="$tmp/home" NODE_NO_WARNINGS=1 "$nodebin" "$@"
+          }
+          offline -e 'const fs=require("node:fs"),p=require("node:path"),h=require("node:crypto"),a=require("node:assert/strict");const d=process.argv[1],m=JSON.parse(fs.readFileSync(p.join(d,"MANIFIESTO.json")));a.equal(m.archivos.length,15);for(const x of m.archivos){const b=fs.readFileSync(p.join(d,x.ruta));a.equal(b.length,x.bytes);a.equal(h.createHash("sha256").update(b).digest("hex"),x.sha256)};console.log("D18_MANIFEST_15_HASHES_OK")' "$audit"
+          test "$(sha256sum "$src/lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs" | cut -d' ' -f1)" = 30c7c2125a200eda93d111f73de48306c5bf30d6ade5761a90dabdd155b9c72f
+          c="$audit/codigo"
+          run_checked() {
+            local name="$1"; shift
+            if ! offline "$@" >"$out/$name.stdout" 2>"$out/$name.stderr"; then echo "D18_STEP_FAILED $name"; exit 1; fi
+          }
+          run_checked causal "$c/test_d18_pa1.cjs" "$src" "$c/d18_stop_residente_lab.cjs" "$out/d18.json"
+          # Independent mutation receipt hygiene: no stale receipt may survive a child failure.
+          mkdir "$tmp/mut"
+          cp "$c/test_d18_pa1.cjs" "$tmp/mut/"
+          offline -e 'const fs=require("node:fs"),a=require("node:assert/strict");let s=fs.readFileSync(process.argv[1],"utf8");const old="cp.spawnSync(process.execPath,[test,root,f,o,";a.equal(s.split(old).length,2);s=s.replace(old,"fs.rmSync(o,{force:true});const child=cp.spawnSync(process.execPath,[test,root,f,o,");const end="return JSON.parse(fs.readFileSync(o,";a.equal(s.split(end).length,2);s=s.replace(end,"if(child.error||![0,1].includes(child.status)||!fs.existsSync(o))throw Error(\"MUTANT_NO_RECEIPT\");return JSON.parse(fs.readFileSync(o,");fs.writeFileSync(process.argv[2],s)' "$c/mutantes_d18.cjs" "$tmp/mut/mutantes_d18.cjs"
+          run_checked mutants "$tmp/mut/mutantes_d18.cjs" "$src" "$c/d18_stop_residente_lab.cjs" "$out/mutantes.json"
+          run_checked integration "$c/test_d18_integracion.cjs" "$src" "$c/d18_stop_residente_lab.cjs" "$c/parche_autoridad_d18.cjs" "$out/integracion.json"
+          run_checked patch "$c/parche_autoridad_d18.cjs" "$src/lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs" "$out/autoridad_d18.cjs"
+          test "$(sha256sum "$out/autoridad_d18.cjs" | cut -d' ' -f1)" = 57419f32313f31f23418e9f5ce803088dc788326f9872a8a3439b6d4468a6fb4
+          rc=0
+          diff -u --label a/lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs --label b/lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs "$src/lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs" "$out/autoridad_d18.cjs" > "$out/patch.diff" || rc=$?
+          test "$rc" = 1
+          cmp -s "$out/patch.diff" "$audit/parche/autoridad_d18_propuesta.diff"
+          run_checked impact "$c/impacto_fixtures.cjs" "$src" "$c/d18_stop_residente_lab.cjs" "$c/parche_autoridad_d18.cjs" "$out/impacto.json"
+          offline -e 'const fs=require("node:fs"),p=require("node:path"),a=require("node:assert/strict");const [o,d]=process.argv.slice(1);const read=(x,n)=>JSON.parse(fs.readFileSync(p.join(x,n+".json")));for(const [n,t] of [["d18",25],["integracion",6]]){const r=read(o,n),q=read(d,n),z=x=>x.rows.map(y=>[y.id,y.pass,y.error||null]);a.equal(r.pass,t);a.equal(r.total,t);a.deepEqual(z(r),z(q));a.equal(new Set(r.rows.map(x=>x.id)).size,t);a.ok(r.rows.every(x=>x.pass===true));}const r=read(o,"mutantes"),q=read(d,"mutantes"),z=x=>x.mutantes.map(y=>[y.id,y.detectado,y.casos]);a.equal(r.muertos,12);a.equal(r.total,12);a.equal(r.invalidos,0);a.equal(r.control.pass,19);a.deepEqual(z(r),z(q));const im=read(o,"impacto");a.deepEqual(im,read(d,"impacto"));console.log(JSON.stringify({scope:"D18_TEAM_INDEPENDENT_REPRODUCTION",K:6,P:19,integration:6,mutants:12,invalid:0,impact:im.suites.map(x=>({suite:x.suite,before:x.pinOriginal,after:x.conParche,changed:x.cambian.map(y=>y.id)})),physicalWrites:0,certifiesP0:0,W:"HOLD_EXTERNAL_EVIDENCE"}));' "$out" "$audit/resultados"
+          echo D18_REPRO_25_6_12_4_IMPACT_LAB_NO_W_NO_GAS_NO_DEPLOY
+          # Probe results contain only labels, no source or account data.
+          if ! offline "$tmp/team/lab/trade-integrated-baseline/test_d18_review_probe.cjs" "$src" "$audit" "$out/review.json" >"$out/review.stdout" 2>"$out/review.stderr"; then
+            if test -s "$out/review.json"; then cat "$out/review.json"; fi
+            echo D18_PROBE_FAILED
+            exit 1
+          fi
+          cat "$out/review.json"
+          echo D18_REVIEW_5_GAPS_REPRODUCED_LAB_NO_W_NO_GAS_NO_DEPLOY
