@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: 5155df8d71255e84a31c79dce5da30af72bc20a5
+          ref: 4db80d061fd9eeb583cd0c330cfa91d70790cdd9
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
@@ -42,7 +42,7 @@ jobs:
           set -euo pipefail
           test "$(git -C private-source rev-parse HEAD)" = 36ec5545a504f2a8031c4d1754d1fc36675e8f63
           test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
-          test "$(git -C private-lab rev-parse HEAD)" = 5155df8d71255e84a31c79dce5da30af72bc20a5
+          test "$(git -C private-lab rev-parse HEAD)" = 4db80d061fd9eeb583cd0c330cfa91d70790cdd9
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 93dbd54a0ee9ef912f7ab361dc811a5d74e84ac2
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_buy_source.cjs)" = bb753f755868c7c1610a4e9f18bc111b8663f177
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_recovery_source.cjs)" = a0cff670b27567d1558794114e06506e79d9b83e
@@ -120,8 +120,8 @@ jobs:
           test "$rc" = 0
           echo OP5A_16_SIGNED_E19_OPENING_LAB_NO_W_NO_GAS_NO_DEPLOY
 
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_e19_integrated_lab.cjs)" = a67e16599fde351b6a0b9d9b1cca15bb0d8a919d
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_e19_integrated_lab.cjs)" = bc75eba8f655a324e84b53a4d0e0b923c3abcc2d
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_e19_integrated_lab.cjs)" = 585b1747b907e1ec9d022846236a276068fac3a0
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_e19_integrated_lab.cjs)" = 532d236ffcdf5a4fd581c5739c3895cca74243cd
           rc=0
           offline "$out/test_operational_e19_integrated_lab.cjs" "$tmp/src" >"$tmp/e19b.json" 2>"$tmp/e19b.err" || rc=$?
           test -s "$tmp/e19b.json" || {
@@ -129,6 +129,6 @@ jobs:
             "$nodebin" -e 'const s=require("node:fs").readFileSync(process.argv[1],"utf8");console.log(JSON.stringify({safe:[...new Set(s.match(/(?:OP5B_[A-Z_]+|ERR_ASSERTION|MODULE_NOT_FOUND|SyntaxError|ReferenceError|TypeError)/g)||[])],frames:[...new Set([...s.matchAll(/(?:test_operational_e19_integrated_lab|operational_e19_integrated_lab)\.cjs:\d+:\d+/g)].map(x=>x[0]))]}));' "$tmp/e19b.err"
             exit 1
           }
-          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:r.scope,manifest:r.manifest,total:r.total,pass:r.pass,rows:r.rows.map(x=>({id:x.id,pass:x.pass,error:x.error,detail:x.detail&&/^(gate |view |preview |unexpected service effect)/.test(x.detail)?x.detail.split("\n")[0]:undefined,comparisons:x.comparisons})),physicalWrites:r.physicalWrites,certifiesP0:r.certifiesP0,deployable:r.deployable,W:r.W}));a.equal(r.scope,"OP5B_E19_REAL_OWNERS_LAB");a.equal(r.manifest.parentSourceSha256,"4c9b2296b62a0516909eb91e1a5c07edfe0aa16c7fb36f9f3d40ae3eda24b775");a.equal(r.total,20);a.equal(r.pass,20);a.equal(new Set(r.rows.map(x=>x.id)).size,20);a.ok(r.rows.every(x=>x.pass));a.equal(r.manifest.rollbackByteExact,true);a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.deployable,false);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/e19b.json"
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:r.scope,manifest:r.manifest,total:r.total,pass:r.pass,rows:r.rows.map(x=>({id:x.id,pass:x.pass,error:x.error,detail:x.detail&&/^(gate |view |preview |unexpected service effect)/.test(x.detail)?x.detail.split("\n")[0]:undefined,comparisons:x.comparisons})),physicalWrites:r.physicalWrites,certifiesP0:r.certifiesP0,deployable:r.deployable,W:r.W}));a.equal(r.scope,"OP5B_E19_REAL_OWNERS_LAB");a.equal(r.manifest.parentSourceSha256,"4c9b2296b62a0516909eb91e1a5c07edfe0aa16c7fb36f9f3d40ae3eda24b775");a.equal(r.total,21);a.equal(r.pass,21);a.equal(new Set(r.rows.map(x=>x.id)).size,21);a.ok(r.rows.every(x=>x.pass));a.equal(r.manifest.rollbackByteExact,true);a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.deployable,false);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/e19b.json"
           test "$rc" = 0
-          echo OP5B_20_REAL_OWNERS_LAB_NO_W_NO_GAS_NO_DEPLOY
+          echo OP5B_R1_21_REAL_OWNERS_LAB_NO_W_NO_GAS_NO_DEPLOY
