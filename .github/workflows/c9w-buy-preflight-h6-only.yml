@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: b86c1aa4526f87d5f2c33fdc0f8468f5194ef4f4
+          ref: 70a63963421c2c65d41f3cdbace3d5c94db22b3c
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
@@ -42,7 +42,7 @@ jobs:
           set -euo pipefail
           test "$(git -C private-source rev-parse HEAD)" = 36ec5545a504f2a8031c4d1754d1fc36675e8f63
           test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
-          test "$(git -C private-lab rev-parse HEAD)" = b86c1aa4526f87d5f2c33fdc0f8468f5194ef4f4
+          test "$(git -C private-lab rev-parse HEAD)" = 70a63963421c2c65d41f3cdbace3d5c94db22b3c
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 9d5c44fbe4afca645de37f6c6f705a8f0e5025eb
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_buy_source.cjs)" = bb753f755868c7c1610a4e9f18bc111b8663f177
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_recovery_source.cjs)" = a0cff670b27567d1558794114e06506e79d9b83e
@@ -78,7 +78,7 @@ jobs:
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_queue_projection.cjs)" = 0720bf2906e1b04e59e7ca47ac8661463e99d4ba
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_d15_h5_ready.cjs)" = b3f5b73eb732d2f2002a8c1fcefb108484bfd7c9
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_queue_adversarial.cjs)" = 8286fa01a7f96e62788bc883b26979d3ccb2bac9
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_buy_preflight_h6_source.cjs)" = 0091d4a89aac154b67342608aa7670bbe41596e7
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_buy_preflight_h6_source.cjs)" = 455b25a0132e70bd73132e74aa949aca11c5b912
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/d15_gas_effects_fixture.cjs)" = a0dc15eed353e3a803e3d2fa8ee007ea39ea3cd6
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_buy_preflight_h6.cjs)" = 074b4a10a164b2df3df18cda88eabebdf47cce93
           tmp=$(mktemp -d)
