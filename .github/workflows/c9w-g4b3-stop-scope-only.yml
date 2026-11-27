@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: bd0359c9169918b04b1341c23612a0c23c9c6342
+          ref: 930a3a63108beb282f3db6c2935d14ae6f7df1a6
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
@@ -53,7 +53,7 @@ jobs:
           set -euo pipefail
           test "$(git -C private-source rev-parse HEAD)" = f7a0c17a6979c4cedcb5f077fb331e991e56941e
           test "$(git -C private-audit rev-parse HEAD)" = 08496f786a2233c4633ed7224410d8165a906a0d
-          test "$(git -C private-lab rev-parse HEAD)" = bd0359c9169918b04b1341c23612a0c23c9c6342
+          test "$(git -C private-lab rev-parse HEAD)" = 930a3a63108beb282f3db6c2935d14ae6f7df1a6
           test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
           tmp=$(mktemp -d)
           trap 'rm -rf "$tmp"' EXIT
@@ -108,7 +108,7 @@ jobs:
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_economic_prefix_lab.cjs)" = 72b7b92f34708ec3d8108eacfd79df1bfa91ec53
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_settlement_projection_lab.cjs)" = 35518172416a1f5c6086623791f80dffa87896cf
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b_tr_close_projection_lab.cjs)" = e22eafd394c85a5facc29759bf55b415628c65cf
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_close_scope_lab.cjs)" = a80b1ee0a9b713a4b4c1254c049df1221a56634f
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_close_scope_lab.cjs)" = 998a7b2dc2d445abbecdf7ae8f7c43679fd8c22c
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_close_plan_lab.cjs)" = 499e8f79db7af576f6b864da4152fccf37dcf6d8
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_stop_scope_lab.cjs)" = 72daf816d005fddfff314d21bdff19ea26f618ce
           run_suite g4bs 10 "$lab/test_g4b3_stop_scope_lab.cjs" "$src" "$out/g4bs.json"
