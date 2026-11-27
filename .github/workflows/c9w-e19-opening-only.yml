@@ -57,7 +57,7 @@ jobs:
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_q1.cjs)" = e86bf304ef0f94f222b0e0f42370a32cc2d7b700
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_q2.cjs)" = e2ac7b1ceb233ffbc9ee1c69f7dba2f0a92a727e
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_recovery_scan.cjs)" = 0597c0571143e694293722776a6abd4da874990c
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_rs2c3_mutants.cjs)" = f7a7e0b08afe82ff2f13c0804a12637235177cb0
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_rs2c3_mutants.cjs)" = eeede94eb1691403328d1578dd13a781f87f2c22
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_tx2b_projection.cjs)" = 4b4118d7b726d6adca83ced3770be594205d45d6
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_authentic_with_projection.cjs)" = aa1644aaf9dbbdf579b4bca51d61a1c63320bc6c
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_projection_lab.cjs)" = feac050c4690346ecc4cf062a85555ad5537be3f
