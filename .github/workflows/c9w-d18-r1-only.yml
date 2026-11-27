@@ -1,0 +1,97 @@
+name: TRADE D18 R1 lifecycle candidate LAB
+on:
+  push:
+    branches: ['audit/c9w-full-source-gate-only']
+    paths: ['.github/workflows/c9w-d18-r1-only.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.repository == 'supersodan-netizen/trade'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Pinned audited baseline read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: f7a0c17a6979c4cedcb5f077fb331e991e56941e
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-source
+      - name: Pinned auditor delivery read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: 08496f786a2233c4633ed7224410d8165a906a0d
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-audit
+      - name: Pinned team R1 read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: f318ab2e592a63dd118e19b4c1677e6cb97c5a7f
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-lab
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Verify R1 candidate offline; no source in logs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C private-source rev-parse HEAD)" = f7a0c17a6979c4cedcb5f077fb331e991e56941e
+          test "$(git -C private-audit rev-parse HEAD)" = 08496f786a2233c4633ed7224410d8165a906a0d
+          test "$(git -C private-lab rev-parse HEAD)" = f318ab2e592a63dd118e19b4c1677e6cb97c5a7f
+          test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
+          tmp=$(mktemp -d)
+          trap 'rm -rf "$tmp"' EXIT
+          mkdir "$tmp/src" "$tmp/audit" "$tmp/team" "$tmp/out" "$tmp/home"
+          git -C private-source archive HEAD candidate scripts docs tests lab | tar -x -C "$tmp/src"
+          git -C private-audit archive HEAD entregas/2026-11-27-D18 | tar -x -C "$tmp/audit"
+          git -C private-lab archive HEAD lab/trade-integrated-baseline/test_d18_resident_r1.cjs lab/trade-integrated-baseline/d18_stop_residente_lab.cjs | tar -x -C "$tmp/team"
+          test -z "$(find "$tmp/src" "$tmp/audit" "$tmp/team" -type f \( -name '.clasp*' -o -name '.env*' -o -name '*.pem' \) -print -quit)"
+          nodebin=$(command -v node)
+          audit="$tmp/audit/entregas/2026-11-27-D18"
+          src="$tmp/src"
+          out="$tmp/out"
+          offline() {
+            sudo unshare --net -- setpriv --reuid="$(id -u)" --regid="$(id -g)" --clear-groups env -i PATH="$(dirname "$nodebin"):/usr/bin:/bin" HOME="$tmp/home" NODE_NO_WARNINGS=1 "$nodebin" "$@"
+          }
+          offline -e 'const fs=require("node:fs"),p=require("node:path"),h=require("node:crypto"),a=require("node:assert/strict");const d=process.argv[1],m=JSON.parse(fs.readFileSync(p.join(d,"MANIFIESTO.json")));a.equal(m.archivos.length,15);for(const x of m.archivos){const b=fs.readFileSync(p.join(d,x.ruta));a.equal(b.length,x.bytes);a.equal(h.createHash("sha256").update(b).digest("hex"),x.sha256)};console.log("D18_MANIFEST_15_HASHES_OK")' "$audit"
+          test "$(sha256sum "$src/lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs" | cut -d' ' -f1)" = 30c7c2125a200eda93d111f73de48306c5bf30d6ade5761a90dabdd155b9c72f
+          c="$audit/codigo"
+          run_checked() {
+            local name="$1"; shift
+            if ! offline "$@" >"$out/$name.stdout" 2>"$out/$name.stderr"; then echo "D18_STEP_FAILED $name"; exit 1; fi
+          }
+          lab="$tmp/team/lab/trade-integrated-baseline"
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 93dbd54a0ee9ef912f7ab361dc811a5d74e84ac2
+          echo "D18_R1_MODULE_SHA256 $(sha256sum "$lab/d18_stop_residente_lab.cjs" | cut -d' ' -f1)"
+          echo "D18_R1_TEST_SHA256 $(sha256sum "$lab/test_d18_resident_r1.cjs" | cut -d' ' -f1)"
+          if ! offline "$lab/test_d18_resident_r1.cjs" "$src" "$audit" "$lab/d18_stop_residente_lab.cjs" "$out/r1.json" >"$out/r1.stdout" 2>"$out/r1.stderr"; then
+            if test -s "$out/r1.json"; then cat "$out/r1.json"; fi
+            echo D18_R1_FOCAL_FAILED
+            exit 1
+          fi
+          cat "$out/r1.json"
+          # Integration only in temporary copy of audited authority; deterministic clock in fixtures.
+          sed 's/placedAt:Date.now()-1/placedAt:Date.now()/g' "$c/test_d18_integracion.cjs" > "$out/test_d18_integracion.cjs"
+          if ! offline "$out/test_d18_integracion.cjs" "$src" "$lab/d18_stop_residente_lab.cjs" "$c/parche_autoridad_d18.cjs" "$out/integracion.json" >"$out/i.stdout" 2>"$out/i.stderr"; then
+            if test -s "$out/integracion.json"; then offline -e 'const j=require(process.argv[1]);console.log(JSON.stringify(j.rows.filter(x=>!x.pass).map(x=>({id:x.id,error:x.error}))));' "$out/integracion.json"; fi
+            echo D18_R1_INTEGRATION_FAILED
+            exit 1
+          fi
+          offline -e 'const a=require("node:assert/strict"),j=require(process.argv[1]);a.equal(j.pass,6);a.equal(j.total,6);a.equal(j.autoridadPadre,"30c7c2125a200eda93d111f73de48306c5bf30d6ade5761a90dabdd155b9c72f");a.equal(j.autoridadD18,"57419f32313f31f23418e9f5ce803088dc788326f9872a8a3439b6d4468a6fb4");console.log(JSON.stringify({scope:"D18_R1_TEMPORARY_AUTHORITY_INTEGRATION",pass:j.pass,total:j.total,authority:j.autoridadD18,physicalWrites:0,certifiesP0:0,W:"HOLD_EXTERNAL_EVIDENCE"}));' "$out/integracion.json"
+          echo D18_R1_28_FOCAL_6_TEMP_INTEGRATION_LAB_NO_W_NO_GAS_NO_DEPLOY
