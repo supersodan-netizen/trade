@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: 96cac9d2c5aec26fe55a1b5f57be3c5d8a0f14b6
+          ref: 9c113337ff9b88a6d106153410fe47c0835421d6
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
@@ -53,7 +53,7 @@ jobs:
           set -euo pipefail
           test "$(git -C private-source rev-parse HEAD)" = f7a0c17a6979c4cedcb5f077fb331e991e56941e
           test "$(git -C private-audit rev-parse HEAD)" = 08496f786a2233c4633ed7224410d8165a906a0d
-          test "$(git -C private-lab rev-parse HEAD)" = 96cac9d2c5aec26fe55a1b5f57be3c5d8a0f14b6
+          test "$(git -C private-lab rev-parse HEAD)" = 9c113337ff9b88a6d106153410fe47c0835421d6
           test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
           tmp=$(mktemp -d)
           trap 'rm -rf "$tmp"' EXIT
@@ -103,12 +103,12 @@ jobs:
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_close_execute_lab.cjs)" = 68e804d44d7ea6a00f34f3425ac7b09afe0a4e0f
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_close_fold_lab.cjs)" = 235b5967fb6ea6abea72bac57a10041ed7dfc3bd
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4a_stop_close_native_lab.cjs)" = 358b63015c83561dc843d2e0e3d5d388434e1f1c
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_projection_lab.cjs)" = 31bb9021aeb8becee32062dc86cd8b78042218e6
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_projection_lab.cjs)" = 227a1ee94bfab2abcfe6ac09dfb5c2a334d34b50
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b_bot_close_projection_lab.cjs)" = dcfa60a1a622e8d9ef01baf4ee438d0a05f7a599
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_economic_prefix_lab.cjs)" = 54809130f2a343c0eaf980ebf54a8b7455dbabfd
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_settlement_projection_lab.cjs)" = 7cf6b56090a653f7620e673fe75761955fbeebe7
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b_tr_close_projection_lab.cjs)" = e22eafd394c85a5facc29759bf55b415628c65cf
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_close_scope_lab.cjs)" = 53ac936e5329aef734b5f4f2492f1ab0893a247d
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_close_scope_lab.cjs)" = 4a12a075517b190e380b256ad63fee8bb948ddca
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_close_plan_lab.cjs)" = 21c68ca14c3c1f64d804070c4fd3386535614784
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_stop_scope_lab.cjs)" = 72daf816d005fddfff314d21bdff19ea26f618ce
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_durable_disposition_lab.cjs)" = bb7d9a36f38041857344bfc24353b42c379805d0
@@ -124,7 +124,7 @@ jobs:
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_next_cycle_prefix_lab.cjs)" = dc9d9ec4827b5e4a51b2205c5ab7379913fa16ac
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_buy_lab.cjs)" = d91053a377f20e76ca422030ff9244c942744007
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_projection_lab.cjs)" = ecb260960dcceee28d96a11e47ebe49d5260c395
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_close_lab.cjs)" = cdfcef07bf517b346becf19765d3d4849c8037e7
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_close_lab.cjs)" = 9fac9de97aa857846ca7e622f5c4fcb8bc04e15e
           run_suite g4bee 8 "$lab/test_g4b3_native_second_close_lab.cjs" "$src" "$out/g4bee.json"
           run_suite g4bed 12 "$lab/test_g4b3_native_second_projection_lab.cjs" "$src" "$out/g4bed.json"
           run_suite g4bec 10 "$lab/test_g4b3_native_second_buy_lab.cjs" "$src" "$out/g4bec.json"
