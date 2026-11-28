@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: 2a83dad855394dc521fdd5b44356a47ad8717c21
+          ref: 891502a5df641f3c0c6858a4f6d9a9335ec602d6
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
@@ -53,7 +53,7 @@ jobs:
           set -euo pipefail
           test "$(git -C private-source rev-parse HEAD)" = f7a0c17a6979c4cedcb5f077fb331e991e56941e
           test "$(git -C private-audit rev-parse HEAD)" = 08496f786a2233c4633ed7224410d8165a906a0d
-          test "$(git -C private-lab rev-parse HEAD)" = 2a83dad855394dc521fdd5b44356a47ad8717c21
+          test "$(git -C private-lab rev-parse HEAD)" = 891502a5df641f3c0c6858a4f6d9a9335ec602d6
           test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
           tmp=$(mktemp -d)
           trap 'rm -rf "$tmp"' EXIT
@@ -96,6 +96,9 @@ jobs:
             if test -s "$out/$name.json"; then
               offline -e 'const fs=require("node:fs"),a=require("node:assert/strict");const r=JSON.parse(fs.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:r.scope,pass:r.pass,total:r.total,failed:(r.rows||[]).filter(x=>!x.pass).map(x=>({id:x.id,error:x.error||x.errorCode||null})),W:r.W}));a.equal(r.total,Number(process.argv[2]));a.equal(r.pass,r.total);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$out/$name.json" "$expected"
             else
+              if [ "$name" = g4bef ]; then
+                grep -E '^\{"scope":"G4BEF_HARNESS_DIAGNOSTIC",' "$out/$name.stdout" || true
+              fi
               offline -e 'const fs=require("node:fs"),a=require("node:assert/strict");const lines=fs.readFileSync(process.argv[1],"utf8").trim().split("\n"),r=JSON.parse(lines[lines.length-1]);console.log(JSON.stringify({scope:r.scope,pass:r.pass,total:r.total,failed:(r.rows||[]).filter(x=>!x.pass).map(x=>({id:x.id,error:x.error||x.errorCode||null})),W:r.W}));a.equal(r.total,Number(process.argv[2]));a.equal(r.pass,r.total);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$out/$name.stdout" "$expected" 2>/dev/null || { echo "PA1_SUITE_FAILED $name"; return 1; }
             fi
             test "$rc" = 0
@@ -125,7 +128,7 @@ jobs:
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_buy_lab.cjs)" = d91053a377f20e76ca422030ff9244c942744007
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_projection_lab.cjs)" = ecb260960dcceee28d96a11e47ebe49d5260c395
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_close_lab.cjs)" = 9fac9de97aa857846ca7e622f5c4fcb8bc04e15e
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_close_projection_lab.cjs)" = 4a1de42f243fb9296f716b3e34335bc0cf9e254c
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_close_projection_lab.cjs)" = ea1d8dc23e43b22c8c72fca0c77af15d1938b431
           run_suite g4bef 15 "$lab/test_g4b3_native_second_close_projection_lab.cjs" "$src" "$out/g4bef.json"
           echo G4BEF_R1_15_FOCAL_LAB_NO_W_NO_GAS_NO_DEPLOY
   extensions:
@@ -160,7 +163,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: 2a83dad855394dc521fdd5b44356a47ad8717c21
+          ref: 891502a5df641f3c0c6858a4f6d9a9335ec602d6
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
@@ -176,7 +179,7 @@ jobs:
           set -euo pipefail
           test "$(git -C private-source rev-parse HEAD)" = f7a0c17a6979c4cedcb5f077fb331e991e56941e
           test "$(git -C private-audit rev-parse HEAD)" = 08496f786a2233c4633ed7224410d8165a906a0d
-          test "$(git -C private-lab rev-parse HEAD)" = 2a83dad855394dc521fdd5b44356a47ad8717c21
+          test "$(git -C private-lab rev-parse HEAD)" = 891502a5df641f3c0c6858a4f6d9a9335ec602d6
           test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
           tmp=$(mktemp -d)
           trap 'rm -rf "$tmp"' EXIT
@@ -219,6 +222,9 @@ jobs:
             if test -s "$out/$name.json"; then
               offline -e 'const fs=require("node:fs"),a=require("node:assert/strict");const r=JSON.parse(fs.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:r.scope,pass:r.pass,total:r.total,failed:(r.rows||[]).filter(x=>!x.pass).map(x=>({id:x.id,error:x.error||x.errorCode||null})),W:r.W}));a.equal(r.total,Number(process.argv[2]));a.equal(r.pass,r.total);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$out/$name.json" "$expected"
             else
+              if [ "$name" = g4bef ]; then
+                grep -E '^\{"scope":"G4BEF_HARNESS_DIAGNOSTIC",' "$out/$name.stdout" || true
+              fi
               offline -e 'const fs=require("node:fs"),a=require("node:assert/strict");const lines=fs.readFileSync(process.argv[1],"utf8").trim().split("\n"),r=JSON.parse(lines[lines.length-1]);console.log(JSON.stringify({scope:r.scope,pass:r.pass,total:r.total,failed:(r.rows||[]).filter(x=>!x.pass).map(x=>({id:x.id,error:x.error||x.errorCode||null})),W:r.W}));a.equal(r.total,Number(process.argv[2]));a.equal(r.pass,r.total);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$out/$name.stdout" "$expected" 2>/dev/null || { echo "PA1_SUITE_FAILED $name"; return 1; }
             fi
             test "$rc" = 0
@@ -248,7 +254,7 @@ jobs:
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_buy_lab.cjs)" = d91053a377f20e76ca422030ff9244c942744007
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_projection_lab.cjs)" = ecb260960dcceee28d96a11e47ebe49d5260c395
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_close_lab.cjs)" = 9fac9de97aa857846ca7e622f5c4fcb8bc04e15e
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_close_projection_lab.cjs)" = 4a1de42f243fb9296f716b3e34335bc0cf9e254c
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_close_projection_lab.cjs)" = ea1d8dc23e43b22c8c72fca0c77af15d1938b431
           run_suite g4bee 8 "$lab/test_g4b3_native_second_close_lab.cjs" "$src" "$out/g4bee.json"
           run_suite g4bed 12 "$lab/test_g4b3_native_second_projection_lab.cjs" "$src" "$out/g4bed.json"
           run_suite g4bec 10 "$lab/test_g4b3_native_second_buy_lab.cjs" "$src" "$out/g4bec.json"
@@ -291,7 +297,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: 2a83dad855394dc521fdd5b44356a47ad8717c21
+          ref: 891502a5df641f3c0c6858a4f6d9a9335ec602d6
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
@@ -329,7 +335,7 @@ jobs:
           set -euo pipefail
           test "$(git -C private-source rev-parse HEAD)" = 36ec5545a504f2a8031c4d1754d1fc36675e8f63
           test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
-          test "$(git -C private-lab rev-parse HEAD)" = 2a83dad855394dc521fdd5b44356a47ad8717c21
+          test "$(git -C private-lab rev-parse HEAD)" = 891502a5df641f3c0c6858a4f6d9a9335ec602d6
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 04c037fa0be51b67cd1c98734e60b11e36fc44f2
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_buy_source.cjs)" = bb753f755868c7c1610a4e9f18bc111b8663f177
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_recovery_source.cjs)" = a0cff670b27567d1558794114e06506e79d9b83e
@@ -674,7 +680,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: 2a83dad855394dc521fdd5b44356a47ad8717c21
+          ref: 891502a5df641f3c0c6858a4f6d9a9335ec602d6
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
@@ -690,7 +696,7 @@ jobs:
           set -euo pipefail
           test "$(git -C private-source rev-parse HEAD)" = f7a0c17a6979c4cedcb5f077fb331e991e56941e
           test "$(git -C private-audit rev-parse HEAD)" = 08496f786a2233c4633ed7224410d8165a906a0d
-          test "$(git -C private-lab rev-parse HEAD)" = 2a83dad855394dc521fdd5b44356a47ad8717c21
+          test "$(git -C private-lab rev-parse HEAD)" = 891502a5df641f3c0c6858a4f6d9a9335ec602d6
           test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
           tmp=$(mktemp -d)
           trap 'rm -rf "$tmp"' EXIT
@@ -755,7 +761,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: 2a83dad855394dc521fdd5b44356a47ad8717c21
+          ref: 891502a5df641f3c0c6858a4f6d9a9335ec602d6
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
@@ -771,7 +777,7 @@ jobs:
           set -euo pipefail
           test "$(git -C private-source rev-parse HEAD)" = 36ec5545a504f2a8031c4d1754d1fc36675e8f63
           test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
-          test "$(git -C private-lab rev-parse HEAD)" = 2a83dad855394dc521fdd5b44356a47ad8717c21
+          test "$(git -C private-lab rev-parse HEAD)" = 891502a5df641f3c0c6858a4f6d9a9335ec602d6
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 04c037fa0be51b67cd1c98734e60b11e36fc44f2
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_buy_source.cjs)" = bb753f755868c7c1610a4e9f18bc111b8663f177
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_recovery_source.cjs)" = a0cff670b27567d1558794114e06506e79d9b83e
