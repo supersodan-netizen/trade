@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: supersodan-netizen/trade-staging
-          ref: 6d769b81a15caf6f67002c098cda8d12d1aba7f7
+          ref: 1cdb640edfcc669277c1bd219ec87a6c1405692f
           ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
           persist-credentials: false
           fetch-depth: 1
@@ -53,7 +53,7 @@ jobs:
           set -euo pipefail
           test "$(git -C private-source rev-parse HEAD)" = f7a0c17a6979c4cedcb5f077fb331e991e56941e
           test "$(git -C private-audit rev-parse HEAD)" = 08496f786a2233c4633ed7224410d8165a906a0d
-          test "$(git -C private-lab rev-parse HEAD)" = 6d769b81a15caf6f67002c098cda8d12d1aba7f7
+          test "$(git -C private-lab rev-parse HEAD)" = 1cdb640edfcc669277c1bd219ec87a6c1405692f
           test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
           tmp=$(mktemp -d)
           trap 'rm -rf "$tmp"' EXIT
@@ -123,7 +123,7 @@ jobs:
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_cycle_projection_prefix_lab.cjs)" = 56eaefd98d3b7b5ecae2079396981d051d4c537c
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_next_cycle_prefix_lab.cjs)" = dc9d9ec4827b5e4a51b2205c5ab7379913fa16ac
           test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_buy_lab.cjs)" = d91053a377f20e76ca422030ff9244c942744007
-          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_projection_lab.cjs)" = 388a15d76ff20e1bd4753547545722b4ca01e428
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_projection_lab.cjs)" = ecb260960dcceee28d96a11e47ebe49d5260c395
           run_suite g4bed 12 "$lab/test_g4b3_native_second_projection_lab.cjs" "$src" "$out/g4bed.json"
           run_suite g4bec 10 "$lab/test_g4b3_native_second_buy_lab.cjs" "$src" "$out/g4bec.json"
           run_suite g4bep 8 "$lab/test_g4b3_next_cycle_prefix_lab.cjs" "$src" "$out/g4bep.json"
