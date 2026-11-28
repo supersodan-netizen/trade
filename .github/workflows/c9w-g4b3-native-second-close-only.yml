@@ -1,0 +1,136 @@
+name: TRADE G4b native second close LAB
+on:
+  push:
+    branches: ['audit/c9w-full-source-gate-only']
+    paths: ['.github/workflows/c9w-g4b3-native-second-close-only.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.repository == 'supersodan-netizen/trade'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Pinned audited baseline read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: f7a0c17a6979c4cedcb5f077fb331e991e56941e
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-source
+      - name: Pinned auditor delivery read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: 08496f786a2233c4633ed7224410d8165a906a0d
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-audit
+      - name: Pinned G4b.2a candidate read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: 96cac9d2c5aec26fe55a1b5f57be3c5d8a0f14b6
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-lab
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Verify G4b.2a and affected authority suites offline
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C private-source rev-parse HEAD)" = f7a0c17a6979c4cedcb5f077fb331e991e56941e
+          test "$(git -C private-audit rev-parse HEAD)" = 08496f786a2233c4633ed7224410d8165a906a0d
+          test "$(git -C private-lab rev-parse HEAD)" = 96cac9d2c5aec26fe55a1b5f57be3c5d8a0f14b6
+          test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
+          tmp=$(mktemp -d)
+          trap 'rm -rf "$tmp"' EXIT
+          mkdir "$tmp/src" "$tmp/audit" "$tmp/team" "$tmp/out" "$tmp/home"
+          git -C private-source archive HEAD candidate scripts docs tests lab | tar -x -C "$tmp/src"
+          git -C private-audit archive HEAD entregas/2026-11-27-D18 | tar -x -C "$tmp/audit"
+          git -C private-lab archive HEAD lab/trade-integrated-baseline | tar -x -C "$tmp/team"
+          test -z "$(find "$tmp/src" "$tmp/audit" "$tmp/team" -type f \( -name '.clasp*' -o -name '.env*' -o -name '*.pem' \) -print -quit)"
+          nodebin=$(command -v node)
+          audit="$tmp/audit/entregas/2026-11-27-D18"
+          src="$tmp/src"
+          out="$tmp/out"
+          offline() {
+            sudo unshare --net -- setpriv --reuid="$(id -u)" --regid="$(id -g)" --clear-groups env -i PATH="$(dirname "$nodebin"):/usr/bin:/bin" HOME="$tmp/home" NODE_NO_WARNINGS=1 "$nodebin" "$@"
+          }
+          offline -e 'const fs=require("node:fs"),p=require("node:path"),h=require("node:crypto"),a=require("node:assert/strict");const d=process.argv[1],m=JSON.parse(fs.readFileSync(p.join(d,"MANIFIESTO.json")));a.equal(m.archivos.length,15);for(const x of m.archivos){const b=fs.readFileSync(p.join(d,x.ruta));a.equal(b.length,x.bytes);a.equal(h.createHash("sha256").update(b).digest("hex"),x.sha256)};console.log("D18_MANIFEST_15_HASHES_OK")' "$audit"
+          test "$(sha256sum "$src/lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs" | cut -d' ' -f1)" = 30c7c2125a200eda93d111f73de48306c5bf30d6ade5761a90dabdd155b9c72f
+          c="$audit/codigo"
+          run_checked() {
+            local name="$1"; shift
+            if ! offline "$@" >"$out/$name.stdout" 2>"$out/$name.stderr"; then echo "D18_STEP_FAILED $name"; exit 1; fi
+          }
+          lab="$tmp/team/lab/trade-integrated-baseline"
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 04c037fa0be51b67cd1c98734e60b11e36fc44f2
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/d18_stop_residente_lab.cjs)" = 5b5cf9fcf35706e0a50c50c4c05256d12be54b87
+          echo "PA1_AUTHORITY_SHA256 $(sha256sum "$lab/authority_c9w_tx1_d10.cjs" | cut -d' ' -f1)"
+          echo "PA1_RESIDENT_SHA256 $(sha256sum "$lab/d18_stop_residente_lab.cjs" | cut -d' ' -f1)"
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_sale_origin_lab.cjs)" = dd8605aa3bee72fe838c99cd7501d25a3e6f9cc8
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g3a_stop_sale_origin_lab.cjs)" = 04960835d68db5f8bd571becf31123fb06e70c82
+          echo "G3_ORIGIN_SHA256 $(sha256sum "$lab/operational_stop_sale_origin_lab.cjs" | cut -d' ' -f1)"
+          echo "G3_INPUT_FIXTURE_SHA256 $(sha256sum "$lab/test_operational_settlement_input_lab.cjs" | cut -d' ' -f1)"
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_close_plan_lab.cjs)" = 21c68ca14c3c1f64d804070c4fd3386535614784
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g3b_stop_close_plan_lab.cjs)" = 6652e71220f273482bf6890da6561fcbdaa276a5
+          echo "G3B_PLAN_SHA256 $(sha256sum "$lab/operational_stop_close_plan_lab.cjs" | cut -d' ' -f1)"
+          # Each suite runs once; always retain a sanitized receipt, never print source or error stacks.
+          run_suite() {
+            local name="$1" expected="$2"; shift 2
+            local rc=0
+            offline "$@" >"$out/$name.stdout" 2>"$out/$name.stderr" || rc=$?
+            if test -s "$out/$name.json"; then
+              offline -e 'const fs=require("node:fs"),a=require("node:assert/strict");const r=JSON.parse(fs.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:r.scope,pass:r.pass,total:r.total,failed:(r.rows||[]).filter(x=>!x.pass).map(x=>({id:x.id,error:x.error||x.errorCode||null})),W:r.W}));a.equal(r.total,Number(process.argv[2]));a.equal(r.pass,r.total);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$out/$name.json" "$expected"
+            else
+              offline -e 'const fs=require("node:fs"),a=require("node:assert/strict");const lines=fs.readFileSync(process.argv[1],"utf8").trim().split("\n"),r=JSON.parse(lines[lines.length-1]);console.log(JSON.stringify({scope:r.scope,pass:r.pass,total:r.total,failed:(r.rows||[]).filter(x=>!x.pass).map(x=>({id:x.id,error:x.error||x.errorCode||null})),W:r.W}));a.equal(r.total,Number(process.argv[2]));a.equal(r.pass,r.total);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$out/$name.stdout" "$expected" 2>/dev/null || { echo "PA1_SUITE_FAILED $name"; return 1; }
+            fi
+            test "$rc" = 0
+          }
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_close_execute_lab.cjs)" = 68e804d44d7ea6a00f34f3425ac7b09afe0a4e0f
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_close_fold_lab.cjs)" = 235b5967fb6ea6abea72bac57a10041ed7dfc3bd
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4a_stop_close_native_lab.cjs)" = 358b63015c83561dc843d2e0e3d5d388434e1f1c
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_projection_lab.cjs)" = 31bb9021aeb8becee32062dc86cd8b78042218e6
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b_bot_close_projection_lab.cjs)" = dcfa60a1a622e8d9ef01baf4ee438d0a05f7a599
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_economic_prefix_lab.cjs)" = 54809130f2a343c0eaf980ebf54a8b7455dbabfd
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_settlement_projection_lab.cjs)" = 7cf6b56090a653f7620e673fe75761955fbeebe7
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b_tr_close_projection_lab.cjs)" = e22eafd394c85a5facc29759bf55b415628c65cf
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_close_scope_lab.cjs)" = 53ac936e5329aef734b5f4f2492f1ab0893a247d
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_close_plan_lab.cjs)" = 21c68ca14c3c1f64d804070c4fd3386535614784
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_stop_scope_lab.cjs)" = 72daf816d005fddfff314d21bdff19ea26f618ce
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_durable_disposition_lab.cjs)" = bb7d9a36f38041857344bfc24353b42c379805d0
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_close_archive_lab.cjs)" = a1e0e10c32462a450d321a0060d6d528d59f3f5f
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_historical_archive_lab.cjs)" = a14f1de69272b4d431368405c14a86feba262667
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_close_consumption_lab.cjs)" = 9439c62d5e4acb84e96a6d27abd7430c7e2edd77
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_consumption_lab.cjs)" = 905d8efd32ebd0f928228dd6a79c0e2ea2df9e25
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_current_snapshot_lab.cjs)" = f1923c4b42cadf5c9e251de7f54dc54ae6d8594f
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/d18_stop_residente_lab.cjs)" = 5b5cf9fcf35706e0a50c50c4c05256d12be54b87
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_next_cycle_lab.cjs)" = ef621a1e0266e4d82fd0f59a53a62bce7841d9f5
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_next_cycle_stage_lab.cjs)" = dedc4b45c906bbc59ba146d9ad821d8f033ec5ce
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_cycle_projection_prefix_lab.cjs)" = 56eaefd98d3b7b5ecae2079396981d051d4c537c
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_next_cycle_prefix_lab.cjs)" = dc9d9ec4827b5e4a51b2205c5ab7379913fa16ac
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_buy_lab.cjs)" = d91053a377f20e76ca422030ff9244c942744007
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_projection_lab.cjs)" = ecb260960dcceee28d96a11e47ebe49d5260c395
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_close_lab.cjs)" = cdfcef07bf517b346becf19765d3d4849c8037e7
+          run_suite g4bee 8 "$lab/test_g4b3_native_second_close_lab.cjs" "$src" "$out/g4bee.json"
+          run_suite g4bed 12 "$lab/test_g4b3_native_second_projection_lab.cjs" "$src" "$out/g4bed.json"
+          run_suite g4bec 10 "$lab/test_g4b3_native_second_buy_lab.cjs" "$src" "$out/g4bec.json"
+          run_suite g4bep 8 "$lab/test_g4b3_next_cycle_prefix_lab.cjs" "$src" "$out/g4bep.json"
+          run_suite g4ben 12 "$lab/test_g4b3_next_cycle_stage_lab.cjs" "$src" "$out/g4ben.json"
+          run_suite native 12 "$lab/test_pa1_integrated_lab.cjs" "$out/native.json"
+          run_suite g4cn 12 "$lab/test_g4b3_consumption_lab.cjs" "$src" "$out/g4cn.json"
+          run_suite g4bdn 10 "$lab/test_g4b3_current_snapshot_lab.cjs" "$src" "$out/g4bdn.json"
+          echo G4B3_NATIVE_SECOND_CLOSE_84_FOCAL_LAB_NO_W_NO_GAS_NO_DEPLOY
