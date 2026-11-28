@@ -1,0 +1,863 @@
+name: TRADE G4b two-cycle grouped LAB gate
+on:
+  push:
+    branches: ['audit/c9w-full-source-gate-only']
+    paths: ['.github/workflows/c9w-two-cycle-integral-gate.yml']
+permissions:
+  contents: read
+jobs:
+  second_close:
+    if: github.repository == 'supersodan-netizen/trade'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Pinned audited baseline read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: f7a0c17a6979c4cedcb5f077fb331e991e56941e
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-source
+      - name: Pinned auditor delivery read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: 08496f786a2233c4633ed7224410d8165a906a0d
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-audit
+      - name: Pinned G4b.2a candidate read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: 2a83dad855394dc521fdd5b44356a47ad8717c21
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-lab
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Verify G4b.2a and affected authority suites offline
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C private-source rev-parse HEAD)" = f7a0c17a6979c4cedcb5f077fb331e991e56941e
+          test "$(git -C private-audit rev-parse HEAD)" = 08496f786a2233c4633ed7224410d8165a906a0d
+          test "$(git -C private-lab rev-parse HEAD)" = 2a83dad855394dc521fdd5b44356a47ad8717c21
+          test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
+          tmp=$(mktemp -d)
+          trap 'rm -rf "$tmp"' EXIT
+          mkdir "$tmp/src" "$tmp/audit" "$tmp/team" "$tmp/out" "$tmp/home"
+          git -C private-source archive HEAD candidate scripts docs tests lab | tar -x -C "$tmp/src"
+          git -C private-audit archive HEAD entregas/2026-11-27-D18 | tar -x -C "$tmp/audit"
+          git -C private-lab archive HEAD lab/trade-integrated-baseline | tar -x -C "$tmp/team"
+          test -z "$(find "$tmp/src" "$tmp/audit" "$tmp/team" -type f \( -name '.clasp*' -o -name '.env*' -o -name '*.pem' \) -print -quit)"
+          nodebin=$(command -v node)
+          audit="$tmp/audit/entregas/2026-11-27-D18"
+          src="$tmp/src"
+          out="$tmp/out"
+          offline() {
+            sudo unshare --net -- setpriv --reuid="$(id -u)" --regid="$(id -g)" --clear-groups env -i PATH="$(dirname "$nodebin"):/usr/bin:/bin" HOME="$tmp/home" NODE_NO_WARNINGS=1 "$nodebin" "$@"
+          }
+          offline -e 'const fs=require("node:fs"),p=require("node:path"),h=require("node:crypto"),a=require("node:assert/strict");const d=process.argv[1],m=JSON.parse(fs.readFileSync(p.join(d,"MANIFIESTO.json")));a.equal(m.archivos.length,15);for(const x of m.archivos){const b=fs.readFileSync(p.join(d,x.ruta));a.equal(b.length,x.bytes);a.equal(h.createHash("sha256").update(b).digest("hex"),x.sha256)};console.log("D18_MANIFEST_15_HASHES_OK")' "$audit"
+          test "$(sha256sum "$src/lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs" | cut -d' ' -f1)" = 30c7c2125a200eda93d111f73de48306c5bf30d6ade5761a90dabdd155b9c72f
+          c="$audit/codigo"
+          run_checked() {
+            local name="$1"; shift
+            if ! offline "$@" >"$out/$name.stdout" 2>"$out/$name.stderr"; then echo "D18_STEP_FAILED $name"; exit 1; fi
+          }
+          lab="$tmp/team/lab/trade-integrated-baseline"
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 04c037fa0be51b67cd1c98734e60b11e36fc44f2
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/d18_stop_residente_lab.cjs)" = 5b5cf9fcf35706e0a50c50c4c05256d12be54b87
+          echo "PA1_AUTHORITY_SHA256 $(sha256sum "$lab/authority_c9w_tx1_d10.cjs" | cut -d' ' -f1)"
+          echo "PA1_RESIDENT_SHA256 $(sha256sum "$lab/d18_stop_residente_lab.cjs" | cut -d' ' -f1)"
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_sale_origin_lab.cjs)" = dd8605aa3bee72fe838c99cd7501d25a3e6f9cc8
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g3a_stop_sale_origin_lab.cjs)" = 04960835d68db5f8bd571becf31123fb06e70c82
+          echo "G3_ORIGIN_SHA256 $(sha256sum "$lab/operational_stop_sale_origin_lab.cjs" | cut -d' ' -f1)"
+          echo "G3_INPUT_FIXTURE_SHA256 $(sha256sum "$lab/test_operational_settlement_input_lab.cjs" | cut -d' ' -f1)"
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_close_plan_lab.cjs)" = 21c68ca14c3c1f64d804070c4fd3386535614784
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g3b_stop_close_plan_lab.cjs)" = 6652e71220f273482bf6890da6561fcbdaa276a5
+          echo "G3B_PLAN_SHA256 $(sha256sum "$lab/operational_stop_close_plan_lab.cjs" | cut -d' ' -f1)"
+          # Each suite runs once; always retain a sanitized receipt, never print source or error stacks.
+          run_suite() {
+            local name="$1" expected="$2"; shift 2
+            local rc=0
+            offline "$@" >"$out/$name.stdout" 2>"$out/$name.stderr" || rc=$?
+            if test -s "$out/$name.json"; then
+              offline -e 'const fs=require("node:fs"),a=require("node:assert/strict");const r=JSON.parse(fs.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:r.scope,pass:r.pass,total:r.total,failed:(r.rows||[]).filter(x=>!x.pass).map(x=>({id:x.id,error:x.error||x.errorCode||null})),W:r.W}));a.equal(r.total,Number(process.argv[2]));a.equal(r.pass,r.total);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$out/$name.json" "$expected"
+            else
+              offline -e 'const fs=require("node:fs"),a=require("node:assert/strict");const lines=fs.readFileSync(process.argv[1],"utf8").trim().split("\n"),r=JSON.parse(lines[lines.length-1]);console.log(JSON.stringify({scope:r.scope,pass:r.pass,total:r.total,failed:(r.rows||[]).filter(x=>!x.pass).map(x=>({id:x.id,error:x.error||x.errorCode||null})),W:r.W}));a.equal(r.total,Number(process.argv[2]));a.equal(r.pass,r.total);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$out/$name.stdout" "$expected" 2>/dev/null || { echo "PA1_SUITE_FAILED $name"; return 1; }
+            fi
+            test "$rc" = 0
+          }
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_close_execute_lab.cjs)" = 68e804d44d7ea6a00f34f3425ac7b09afe0a4e0f
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_close_fold_lab.cjs)" = 235b5967fb6ea6abea72bac57a10041ed7dfc3bd
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4a_stop_close_native_lab.cjs)" = 358b63015c83561dc843d2e0e3d5d388434e1f1c
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_projection_lab.cjs)" = c24fbcab305b21b24545db36fd2075c42e16f76e
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b_bot_close_projection_lab.cjs)" = dcfa60a1a622e8d9ef01baf4ee438d0a05f7a599
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_economic_prefix_lab.cjs)" = 54809130f2a343c0eaf980ebf54a8b7455dbabfd
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_settlement_projection_lab.cjs)" = f5b92620a41797bd13ac5b8e30cebd3d27d75148
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b_tr_close_projection_lab.cjs)" = e22eafd394c85a5facc29759bf55b415628c65cf
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_close_scope_lab.cjs)" = 4a12a075517b190e380b256ad63fee8bb948ddca
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_close_plan_lab.cjs)" = 21c68ca14c3c1f64d804070c4fd3386535614784
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_stop_scope_lab.cjs)" = 72daf816d005fddfff314d21bdff19ea26f618ce
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_durable_disposition_lab.cjs)" = bb7d9a36f38041857344bfc24353b42c379805d0
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_close_archive_lab.cjs)" = 9f42037c7e9ed1911b48a531dada358ea91c686a
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_historical_archive_lab.cjs)" = a14f1de69272b4d431368405c14a86feba262667
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_close_consumption_lab.cjs)" = 9439c62d5e4acb84e96a6d27abd7430c7e2edd77
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_consumption_lab.cjs)" = 905d8efd32ebd0f928228dd6a79c0e2ea2df9e25
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_current_snapshot_lab.cjs)" = f1923c4b42cadf5c9e251de7f54dc54ae6d8594f
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/d18_stop_residente_lab.cjs)" = 5b5cf9fcf35706e0a50c50c4c05256d12be54b87
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_next_cycle_lab.cjs)" = ef621a1e0266e4d82fd0f59a53a62bce7841d9f5
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_next_cycle_stage_lab.cjs)" = dedc4b45c906bbc59ba146d9ad821d8f033ec5ce
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_cycle_projection_prefix_lab.cjs)" = 56eaefd98d3b7b5ecae2079396981d051d4c537c
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_next_cycle_prefix_lab.cjs)" = dc9d9ec4827b5e4a51b2205c5ab7379913fa16ac
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_buy_lab.cjs)" = d91053a377f20e76ca422030ff9244c942744007
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_projection_lab.cjs)" = ecb260960dcceee28d96a11e47ebe49d5260c395
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_close_lab.cjs)" = 9fac9de97aa857846ca7e622f5c4fcb8bc04e15e
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_close_projection_lab.cjs)" = 4a1de42f243fb9296f716b3e34335bc0cf9e254c
+          run_suite g4bef 15 "$lab/test_g4b3_native_second_close_projection_lab.cjs" "$src" "$out/g4bef.json"
+          echo G4BEF_R1_15_FOCAL_LAB_NO_W_NO_GAS_NO_DEPLOY
+  extensions:
+    needs: second_close
+    if: github.repository == 'supersodan-netizen/trade'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Pinned audited baseline read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: f7a0c17a6979c4cedcb5f077fb331e991e56941e
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-source
+      - name: Pinned auditor delivery read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: 08496f786a2233c4633ed7224410d8165a906a0d
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-audit
+      - name: Pinned G4b.2a candidate read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: 2a83dad855394dc521fdd5b44356a47ad8717c21
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-lab
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Verify G4b.2a and affected authority suites offline
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C private-source rev-parse HEAD)" = f7a0c17a6979c4cedcb5f077fb331e991e56941e
+          test "$(git -C private-audit rev-parse HEAD)" = 08496f786a2233c4633ed7224410d8165a906a0d
+          test "$(git -C private-lab rev-parse HEAD)" = 2a83dad855394dc521fdd5b44356a47ad8717c21
+          test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
+          tmp=$(mktemp -d)
+          trap 'rm -rf "$tmp"' EXIT
+          mkdir "$tmp/src" "$tmp/audit" "$tmp/team" "$tmp/out" "$tmp/home"
+          git -C private-source archive HEAD candidate scripts docs tests lab | tar -x -C "$tmp/src"
+          git -C private-audit archive HEAD entregas/2026-11-27-D18 | tar -x -C "$tmp/audit"
+          git -C private-lab archive HEAD lab/trade-integrated-baseline | tar -x -C "$tmp/team"
+          test -z "$(find "$tmp/src" "$tmp/audit" "$tmp/team" -type f \( -name '.clasp*' -o -name '.env*' -o -name '*.pem' \) -print -quit)"
+          nodebin=$(command -v node)
+          audit="$tmp/audit/entregas/2026-11-27-D18"
+          src="$tmp/src"
+          out="$tmp/out"
+          offline() {
+            sudo unshare --net -- setpriv --reuid="$(id -u)" --regid="$(id -g)" --clear-groups env -i PATH="$(dirname "$nodebin"):/usr/bin:/bin" HOME="$tmp/home" NODE_NO_WARNINGS=1 "$nodebin" "$@"
+          }
+          offline -e 'const fs=require("node:fs"),p=require("node:path"),h=require("node:crypto"),a=require("node:assert/strict");const d=process.argv[1],m=JSON.parse(fs.readFileSync(p.join(d,"MANIFIESTO.json")));a.equal(m.archivos.length,15);for(const x of m.archivos){const b=fs.readFileSync(p.join(d,x.ruta));a.equal(b.length,x.bytes);a.equal(h.createHash("sha256").update(b).digest("hex"),x.sha256)};console.log("D18_MANIFEST_15_HASHES_OK")' "$audit"
+          test "$(sha256sum "$src/lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs" | cut -d' ' -f1)" = 30c7c2125a200eda93d111f73de48306c5bf30d6ade5761a90dabdd155b9c72f
+          c="$audit/codigo"
+          run_checked() {
+            local name="$1"; shift
+            if ! offline "$@" >"$out/$name.stdout" 2>"$out/$name.stderr"; then echo "D18_STEP_FAILED $name"; exit 1; fi
+          }
+          lab="$tmp/team/lab/trade-integrated-baseline"
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 04c037fa0be51b67cd1c98734e60b11e36fc44f2
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/d18_stop_residente_lab.cjs)" = 5b5cf9fcf35706e0a50c50c4c05256d12be54b87
+          echo "PA1_AUTHORITY_SHA256 $(sha256sum "$lab/authority_c9w_tx1_d10.cjs" | cut -d' ' -f1)"
+          echo "PA1_RESIDENT_SHA256 $(sha256sum "$lab/d18_stop_residente_lab.cjs" | cut -d' ' -f1)"
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_sale_origin_lab.cjs)" = dd8605aa3bee72fe838c99cd7501d25a3e6f9cc8
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g3a_stop_sale_origin_lab.cjs)" = 04960835d68db5f8bd571becf31123fb06e70c82
+          echo "G3_ORIGIN_SHA256 $(sha256sum "$lab/operational_stop_sale_origin_lab.cjs" | cut -d' ' -f1)"
+          echo "G3_INPUT_FIXTURE_SHA256 $(sha256sum "$lab/test_operational_settlement_input_lab.cjs" | cut -d' ' -f1)"
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_close_plan_lab.cjs)" = 21c68ca14c3c1f64d804070c4fd3386535614784
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g3b_stop_close_plan_lab.cjs)" = 6652e71220f273482bf6890da6561fcbdaa276a5
+          echo "G3B_PLAN_SHA256 $(sha256sum "$lab/operational_stop_close_plan_lab.cjs" | cut -d' ' -f1)"
+          # Each suite runs once; always retain a sanitized receipt, never print source or error stacks.
+          run_suite() {
+            local name="$1" expected="$2"; shift 2
+            local rc=0
+            offline "$@" >"$out/$name.stdout" 2>"$out/$name.stderr" || rc=$?
+            if test -s "$out/$name.json"; then
+              offline -e 'const fs=require("node:fs"),a=require("node:assert/strict");const r=JSON.parse(fs.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:r.scope,pass:r.pass,total:r.total,failed:(r.rows||[]).filter(x=>!x.pass).map(x=>({id:x.id,error:x.error||x.errorCode||null})),W:r.W}));a.equal(r.total,Number(process.argv[2]));a.equal(r.pass,r.total);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$out/$name.json" "$expected"
+            else
+              offline -e 'const fs=require("node:fs"),a=require("node:assert/strict");const lines=fs.readFileSync(process.argv[1],"utf8").trim().split("\n"),r=JSON.parse(lines[lines.length-1]);console.log(JSON.stringify({scope:r.scope,pass:r.pass,total:r.total,failed:(r.rows||[]).filter(x=>!x.pass).map(x=>({id:x.id,error:x.error||x.errorCode||null})),W:r.W}));a.equal(r.total,Number(process.argv[2]));a.equal(r.pass,r.total);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$out/$name.stdout" "$expected" 2>/dev/null || { echo "PA1_SUITE_FAILED $name"; return 1; }
+            fi
+            test "$rc" = 0
+          }
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_close_execute_lab.cjs)" = 68e804d44d7ea6a00f34f3425ac7b09afe0a4e0f
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_close_fold_lab.cjs)" = 235b5967fb6ea6abea72bac57a10041ed7dfc3bd
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4a_stop_close_native_lab.cjs)" = 358b63015c83561dc843d2e0e3d5d388434e1f1c
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_projection_lab.cjs)" = c24fbcab305b21b24545db36fd2075c42e16f76e
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b_bot_close_projection_lab.cjs)" = dcfa60a1a622e8d9ef01baf4ee438d0a05f7a599
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_economic_prefix_lab.cjs)" = 54809130f2a343c0eaf980ebf54a8b7455dbabfd
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_settlement_projection_lab.cjs)" = f5b92620a41797bd13ac5b8e30cebd3d27d75148
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b_tr_close_projection_lab.cjs)" = e22eafd394c85a5facc29759bf55b415628c65cf
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_close_scope_lab.cjs)" = 4a12a075517b190e380b256ad63fee8bb948ddca
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_close_plan_lab.cjs)" = 21c68ca14c3c1f64d804070c4fd3386535614784
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_stop_scope_lab.cjs)" = 72daf816d005fddfff314d21bdff19ea26f618ce
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_durable_disposition_lab.cjs)" = bb7d9a36f38041857344bfc24353b42c379805d0
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_close_archive_lab.cjs)" = 9f42037c7e9ed1911b48a531dada358ea91c686a
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_historical_archive_lab.cjs)" = a14f1de69272b4d431368405c14a86feba262667
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_close_consumption_lab.cjs)" = 9439c62d5e4acb84e96a6d27abd7430c7e2edd77
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_consumption_lab.cjs)" = 905d8efd32ebd0f928228dd6a79c0e2ea2df9e25
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_current_snapshot_lab.cjs)" = f1923c4b42cadf5c9e251de7f54dc54ae6d8594f
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/d18_stop_residente_lab.cjs)" = 5b5cf9fcf35706e0a50c50c4c05256d12be54b87
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_next_cycle_lab.cjs)" = ef621a1e0266e4d82fd0f59a53a62bce7841d9f5
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_next_cycle_stage_lab.cjs)" = dedc4b45c906bbc59ba146d9ad821d8f033ec5ce
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_cycle_projection_prefix_lab.cjs)" = 56eaefd98d3b7b5ecae2079396981d051d4c537c
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_next_cycle_prefix_lab.cjs)" = dc9d9ec4827b5e4a51b2205c5ab7379913fa16ac
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_buy_lab.cjs)" = d91053a377f20e76ca422030ff9244c942744007
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_projection_lab.cjs)" = ecb260960dcceee28d96a11e47ebe49d5260c395
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_close_lab.cjs)" = 9fac9de97aa857846ca7e622f5c4fcb8bc04e15e
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_native_second_close_projection_lab.cjs)" = 4a1de42f243fb9296f716b3e34335bc0cf9e254c
+          run_suite g4bee 8 "$lab/test_g4b3_native_second_close_lab.cjs" "$src" "$out/g4bee.json"
+          run_suite g4bed 12 "$lab/test_g4b3_native_second_projection_lab.cjs" "$src" "$out/g4bed.json"
+          run_suite g4bec 10 "$lab/test_g4b3_native_second_buy_lab.cjs" "$src" "$out/g4bec.json"
+          run_suite g4bep 8 "$lab/test_g4b3_next_cycle_prefix_lab.cjs" "$src" "$out/g4bep.json"
+          run_suite g4ben 12 "$lab/test_g4b3_next_cycle_stage_lab.cjs" "$src" "$out/g4ben.json"
+          run_suite native 12 "$lab/test_pa1_integrated_lab.cjs" "$out/native.json"
+          run_suite g4cn 12 "$lab/test_g4b3_consumption_lab.cjs" "$src" "$out/g4cn.json"
+          run_suite g4bdn 10 "$lab/test_g4b3_current_snapshot_lab.cjs" "$src" "$out/g4bdn.json"
+          run_suite g4bh 11 "$lab/test_g4b3_historical_archive_lab.cjs" "$src" "$out/g4bh.json"
+          run_suite g4bd 8 "$lab/test_g4b3_durable_disposition_lab.cjs" "$src" "$out/g4bd.json"
+          run_suite g4bs 10 "$lab/test_g4b3_stop_scope_lab.cjs" "$src" "$out/g4bs.json"
+          run_suite g4bt 14 "$lab/test_g4b_tr_close_projection_lab.cjs" "$src" "$out/g4bt.json"
+          run_suite g4bc 14 "$lab/test_g4b_bot_close_projection_lab.cjs" "$src" "$out/g4bc.json"
+          run_suite g4bp 8 "$lab/test_g4b_economic_prefix_lab.cjs" "$src" "$out/g4bp.json"
+          run_suite g4an 12 "$lab/test_g4a_stop_close_native_lab.cjs" "$src" "$out/g4an.json"
+          run_suite g4af 12 "$lab/test_g4a_stop_close_fold_lab.cjs" "$src" "$out/g4af.json"
+          run_suite g3a 24 "$lab/test_g3a_stop_sale_origin_lab.cjs" "$src" "$out/g3a.json"
+          run_suite g3b 15 "$lab/test_g3b_stop_close_plan_lab.cjs" "$src" "$out/g3b.json"
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_d18_resident_r1.cjs)" = 352616150416623ea48882d8fbaf65a277081154
+          run_suite r1 28 "$lab/test_d18_resident_r1.cjs" "$src" "$audit" "$lab/d18_stop_residente_lab.cjs" "$out/r1.json"
+          echo G4BEF_R1_240_EXTENSION_LAB_NO_W_NO_GAS_NO_DEPLOY
+  historical:
+    needs: second_close
+    if: github.repository == 'supersodan-netizen/trade'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Pinned canonical source read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: 36ec5545a504f2a8031c4d1754d1fc36675e8f63
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-source
+      - name: Pinned private materialized baseline read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: 2a83dad855394dc521fdd5b44356a47ad8717c21
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-lab
+      - name: Pinned auditor D13 read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: e561059a9bb91e1322170c2ec3848f5db0463cd4
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-auditor
+      - name: Pinned parent authority read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: ce66089b1b051870d792346ac58f71394202b6b7
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-parent
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: D14 PT plus OP3c-T complete regression offline
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C private-source rev-parse HEAD)" = 36ec5545a504f2a8031c4d1754d1fc36675e8f63
+          test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
+          test "$(git -C private-lab rev-parse HEAD)" = 2a83dad855394dc521fdd5b44356a47ad8717c21
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 04c037fa0be51b67cd1c98734e60b11e36fc44f2
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_buy_source.cjs)" = bb753f755868c7c1610a4e9f18bc111b8663f177
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_recovery_source.cjs)" = a0cff670b27567d1558794114e06506e79d9b83e
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_source.cjs)" = 6f6fde50fcf7507c64131f3a5de18527ced1b3d0
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/q2_fixture_lab.cjs)" = e54a79779c726765b550cbfd53cda8162a418e7e
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_d12_r16_r19.cjs)" = c8fc580a987e6ec5e03acd4e8a35512922cf7c97
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_d12_t9.cjs)" = eb196904a8d1e38e5131a10cf94fd39c6e87baf3
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_recovery.cjs)" = d8a76904d8b73202663847da7468e8c75bf6d5ce
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_stop.cjs)" = d3ca338da8da6d938b204f6b510f25bd40a04bcd
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_stop_admission.cjs)" = 96742e057e70f29f8ed8cb6d07e8c91ba76100e3
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_pb_stop.cjs)" = 3d5291877e97099568757d07dab6e59caede1730
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_q1.cjs)" = e86bf304ef0f94f222b0e0f42370a32cc2d7b700
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_q2.cjs)" = e2ac7b1ceb233ffbc9ee1c69f7dba2f0a92a727e
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_recovery_scan.cjs)" = 0597c0571143e694293722776a6abd4da874990c
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_rs2c3_mutants.cjs)" = eeede94eb1691403328d1578dd13a781f87f2c22
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_tx2b_projection.cjs)" = 4b4118d7b726d6adca83ced3770be594205d45d6
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_authentic_with_projection.cjs)" = aa1644aaf9dbbdf579b4bca51d61a1c63320bc6c
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_projection_lab.cjs)" = c24fbcab305b21b24545db36fd2075c42e16f76e
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_cash_source.cjs)" = c0c15470a3360723866b21ea6cd133b81d1d4257
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_cash.cjs)" = c2f7b1efc1ecff7d4b3cafabb9a77081a249f9f3
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_reconciliation_source.cjs)" = 5279c2f2ba0ec4d52c25f401b1206a817c57e50e
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_reconciliation.cjs)" = 7de01239271c6c0678583fa69df599965bc20db7
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_receipt_source.cjs)" = 2f93b803cc0c0125e4b1960a3e39a8a812a7c3a6
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_receipt.cjs)" = faf8214a82ca5d64b773864c816ad26b4dc87590
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_recovery_callers_source.cjs)" = 5b9182ab7eb88389a89ff2d1b585f2b523ead200
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_recovery_callers.cjs)" = 2936db8ee1c7760298d80afaaf3f887b2739eace
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_d14_stop_gate.cjs)" = 12ff993f6251a62203956eb62a911139f1dfd038
+          test "$(git -C private-parent rev-parse HEAD)" = ce66089b1b051870d792346ac58f71394202b6b7
+          test "$(git -C private-parent rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 901d8a294181b7c3ab3c455a208c411cab9c16fc
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_op3c_source.cjs)" = 4e4fcffb3fdf27064b3c85b487134b4526fb6b40
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_d14_op3c_trail.cjs)" = bc5192cba116ea9a494de88720488d7c29573e2b
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_queue_source.cjs)" = c10a8c778906e4d13fb88234b22900e83cfff677
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_queue.cjs)" = 37faf302dff90d1278089df2271ecf39757791f2
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_queue_projection_source.cjs)" = 6adb2489214c4979997d480ab7dda5143546dbe2
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_queue_projection.cjs)" = 0720bf2906e1b04e59e7ca47ac8661463e99d4ba
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_d15_h5_ready.cjs)" = b3f5b73eb732d2f2002a8c1fcefb108484bfd7c9
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_queue_adversarial.cjs)" = 8286fa01a7f96e62788bc883b26979d3ccb2bac9
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_buy_preflight_h6_source.cjs)" = 455b25a0132e70bd73132e74aa949aca11c5b912
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/d15_gas_effects_fixture.cjs)" = a0dc15eed353e3a803e3d2fa8ee007ea39ea3cd6
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_buy_preflight_h6.cjs)" = 074b4a10a164b2df3df18cda88eabebdf47cce93
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_settlement_plan_lab.cjs)" = fde48b1ef28420b45eb7ba7013477763417a4555
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_settlement_plan_lab.cjs)" = d99d32f0988b0d4af740098d64ecb14a02c8c5e6
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_settlement_ledger_lab.cjs)" = 8b4a8ecb7252575983c9256b1d7c8ebfdfd62b4c
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_settlement_ledger_lab.cjs)" = 00bebe73d098af5d656bf342d4bd159479c749ad
+          tmp=$(mktemp -d)
+          trap 'rm -rf "$tmp"' EXIT
+          mkdir "$tmp/src" "$tmp/gate" "$tmp/home" "$tmp/auditor" "$tmp/parent"
+          test "$(git -C private-auditor rev-parse HEAD)" = e561059a9bb91e1322170c2ec3848f5db0463cd4
+          test "$(git -C private-auditor rev-parse HEAD:entregas/2026-11-24-D13/c_t9/codigo/test_c_t9.cjs)" = a4d629b441c23087a57b92d7ef993c3c3a1124d0
+          test "$(git -C private-auditor rev-parse HEAD:entregas/2026-11-24-D13/c_t9/codigo/lockshm.py)" = ddf716d1069a3df7475b30c585fdc1ec72bc5385
+          test "$(git -C private-auditor rev-parse HEAD:entregas/2026-11-24-D13/a_autoridad/codigo/test_d13_autoridad.cjs)" = 7b154dc41ae879dfd4ff8aaf1737b65dd3a2a668
+          git -C private-auditor archive HEAD entregas/2026-11-24-D13/c_t9/codigo/test_c_t9.cjs entregas/2026-11-24-D13/c_t9/codigo/lockshm.py entregas/2026-11-24-D13/a_autoridad/codigo/test_d13_autoridad.cjs | tar -x -C "$tmp/auditor"
+          python3 -I - "$tmp/auditor/entregas/2026-11-24-D13/c_t9/codigo/test_c_t9.cjs" <<'PY'
+          import pathlib,sys
+          p=pathlib.Path(sys.argv[1]); s=p.read_text()
+          a="A.init(db, { cashCents:"
+          assert s.count(a)==1
+          p.write_text(s.replace(a,"A.init(db, { instanceId: 'LAB-INSTANCIA-PRUEBAS', cashCents:"))
+          PY
+          python3 -I - "$tmp/auditor/entregas/2026-11-24-D13/a_autoridad/codigo/test_d13_autoridad.cjs" <<'PY'
+          import pathlib,sys
+          p=pathlib.Path(sys.argv[1]); s=p.read_text()
+          a="A.init(db, { ...(instanceId ?"
+          assert s.count(a)==1
+          p.write_text(s.replace(a,"A.init(db, { labMode: 'AUTHORITY_ONLY_FIXTURE', ...(instanceId ?"))
+          PY
+          git -C private-source archive HEAD candidate scripts docs tests lab | tar -x -C "$tmp/src"
+          git -C private-lab archive HEAD lab/c9w-full-d11-x03 lab/c9w-full-d11-strict-q1 lab/trade-integrated-baseline | tar -x -C "$tmp/gate"
+          git -C private-parent archive HEAD lab/trade-integrated-baseline | tar -x -C "$tmp/parent"
+          test -z "$(find "$tmp/src" "$tmp/gate" "$tmp/parent" -type f \( -name '.clasp*' -o -name '.env*' -o -name '*.pem' \) -print -quit)"
+          nodebin=$(command -v node)
+          base="$tmp/gate/lab/c9w-full-d11-x03"
+          tools="$tmp/gate/lab/c9w-full-d11-strict-q1"
+          out="$tmp/gate/lab/trade-integrated-baseline"
+          export EXPECTED_AUTHORITY_SHA256="$(git -C private-lab show HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs | sha256sum | cut -d' ' -f1)"
+          export EXPECTED_PROJECTOR_SHA256="$(git -C private-lab show HEAD:lab/trade-integrated-baseline/tx2b_projection_lab.cjs | sha256sum | cut -d' ' -f1)"
+          test "$(sha256sum "$out/authority_c9w_tx1_d10.cjs" | cut -d' ' -f1)" = "$EXPECTED_AUTHORITY_SHA256"
+          test "$(sha256sum "$out/tx2b_projection_lab.cjs" | cut -d' ' -f1)" = "$EXPECTED_PROJECTOR_SHA256"
+          offline() {
+            sudo unshare --net -- setpriv --reuid="$(id -u)" --regid="$(id -g)" --clear-groups env -i PATH=/usr/bin:/bin HOME="$tmp/home" "$nodebin" "$@"
+          }
+          sha256sum "$out/authority_c9w_tx1_d10.cjs" | awk '{print "RC1_AUTHORITY_SHA256=" $1}'
+          sb=0
+          offline "$out/test_operational_stop_admission.cjs" >"$tmp/sb.json" 2>"$tmp/sb.err" || sb=$?
+          test -s "$tmp/sb.json" || { echo OP3B_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs");const r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:r.scope,pass:r.pass,total:r.total,rows:r.rows.map(x=>({id:x.id,pass:x.pass,errorCode:x.errorCode,detail:x.detail}))}));a.equal(r.scope,"OP3B_STOP_ADMISSION_LAB");a.equal(r.total,14);a.equal(r.pass,14);a.equal(r.rows.length,14);a.equal(new Set(r.rows.map(x=>x.id)).size,14);a.ok(r.rows.every(x=>x.pass));a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/sb.json"
+          test "$sb" = 0
+          rsrc=0
+          offline "$out/test_recovery_scan.cjs" --rs2c3a >"$tmp/rs1.json" 2>"$tmp/rs1.err" || rsrc=$?
+          test -s "$tmp/rs1.json" || { echo RS1_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs");const r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:r.scope,pass:r.pass,fail:r.fail,failed:r.rows.filter(x=>!x.pass).map(x=>({id:x.id,code:x.errorCode})),W:r.W}));a.equal(r.scope,"RC2_RS2C3A_EXPORT_GUARD_LAB");a.equal(r.rows.length,154);a.equal(new Set(r.rows.map(x=>x.id)).size,154);a.equal(r.pass,154);a.equal(r.fail,0);a.ok(r.rows.every(x=>x.pass));a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/rs1.json"
+          test "$rsrc" = 0
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_rs2c3_mutants.cjs)" = eeede94eb1691403328d1578dd13a781f87f2c22
+          mrc=0
+          offline "$out/test_rs2c3_mutants.cjs" >"$tmp/mutants.json" 2>"$tmp/mutants.err" || mrc=$?
+          test -s "$tmp/mutants.json" || { echo RS2C3_MUTANTS_NO_RECEIPT; "$nodebin" -e 'const s=require("node:fs").readFileSync(process.argv[1],"utf8");console.log(JSON.stringify({safe:[...new Set(s.match(/(?:MUTANT_[A-Z_]+|ERR_ASSERTION|MODULE_NOT_FOUND|SyntaxError|ReferenceError|TypeError)/g)||[])],frames:[...new Set([...s.matchAll(/(?:test_rs2c3_mutants|operational_[a-z_]+)\.cjs:\d+:\d+/g)].map(x=>x[0]))]}));' "$tmp/mutants.err"; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs");const r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify(r));a.equal(r.scope,"RC2_RS2C3A_MUTATION_LAB");a.equal(r.classifierControls,7);a.equal(r.control,11);a.equal(r.total,10);a.equal(r.detected,10);a.equal(r.invalid,0);a.equal(r.survived,0);a.equal(r.rows.length,10);a.equal(new Set(r.rows.map(x=>x.id)).size,10);a.ok(r.rows.every(x=>x.state==="DETECTED_SEMANTIC"&&x.failures.length&&x.failures.every(y=>y.semantic===true)));a.equal(r.originalsUntouched,true);a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/mutants.json"
+          test "$mrc" = 0
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_pb_stop.cjs)" = 3d5291877e97099568757d07dab6e59caede1730
+          pbc=0
+          offline "$out/test_pb_stop.cjs" "$out" pb "$tmp/pb.json" >"$tmp/pb.out" 2>"$tmp/pb.err" || pbc=$?
+          test -s "$tmp/pb.json" || { echo PB_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:"D13_PB_STOP_SENTINEL_ADAPTED_LAB",pass:r.pass,total:r.total,rows:r.filas.map(x=>({id:x.id,pass:x.pass,esperado:x.esperado,observado:x.observado,codigo:/^[A-Z0-9_]+$/.test(x.codigo||"")?x.codigo:null}))}));a.equal(r.modo,"pb");a.equal(r.total,13);a.equal(r.pass,13);a.equal(new Set(r.filas.map(x=>x.id)).size,13);a.ok(r.filas.every(x=>x.pass));' "$tmp/pb.json"
+          test "$pbc" = 0
+          q2rc=0
+          offline "$out/test_q2.cjs" >"$tmp/q2.json" 2>"$tmp/q2.err" || q2rc=$?
+          test -s "$tmp/q2.json" || { echo Q2_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs");const r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:r.scope,pass:r.pass,fail:r.fail,failed:r.rows.filter(x=>!x.pass).map(x=>({id:x.id,code:x.errorCode})),W:r.W}));a.equal(r.scope,"RC1_Q2_ED25519_LAB");a.equal(r.rows.length,19);a.equal(r.pass,19);a.equal(r.fail,0);a.ok(r.rows.every(x=>x.pass));a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/q2.json"
+          test "$q2rc" = 0
+          for f in "$out"/*.cjs; do "$nodebin" --check "$f" >/dev/null 2>&1 || { echo Q1_SYNTAX_FAILED; exit 1; }; done
+          qrc=0
+          offline "$out/test_q1.cjs" "$out" "$base" >"$tmp/q1.json" 2>"$tmp/q1.err" || qrc=$?
+          test -s "$tmp/q1.json" || { echo Q1_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs");const r=JSON.parse(f.readFileSync(process.argv[1]));a.equal(r.scope,"D11_Q1_REGRESSION_Q2_LAB");a.equal(r.rows.length,9);console.log(JSON.stringify({scope:r.scope,pass:r.pass,fail:r.fail,rows:r.rows.map((x,i)=>({case:i+1,pass:x.pass,code:/^[A-Z0-9_]+$/.test(x.errorCode||"")?x.errorCode:null})),W:r.W}));a.equal(r.pass,9);a.equal(r.fail,0);a.ok(r.rows.every(x=>x.pass));a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.quoteCustodyImplemented,true);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/q1.json"
+          test "$qrc" = 0
+          prc=0
+          offline "$out/test_tx2b_projection.cjs" >"$tmp/proj.json" 2>"$tmp/proj.err" || prc=$?
+          test -s "$tmp/proj.json" || { echo Q1_PROJECTION_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs");const r=JSON.parse(f.readFileSync(process.argv[1]));a.equal(r.scope,"TX2C_D11_X03_SOURCE_GATE_LAB");a.equal(r.rows.length,49);a.equal(new Set(r.rows.map(x=>x.id)).size,49);console.log(JSON.stringify({scope:r.scope,pass:r.pass,fail:r.fail,failed:r.rows.filter(x=>!x.pass).map(x=>({id:x.id,code:/^[A-Z0-9_]+$/.test(x.errorCode||"")?x.errorCode:null})),W:r.W}));a.equal(r.pass,49);a.equal(r.fail,0);a.ok(r.rows.every(x=>x.pass));a.equal(r.physicalWrites,0);a.equal(r.physicalClear,false);a.equal(r.certifiesP0,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/proj.json"
+          test "$prc" = 0
+          arc=0
+          offline "$out/tx2b_authentic_with_projection.cjs" "$tmp/src" >"$tmp/auth.json" 2>"$tmp/auth.err" || arc=$?
+          test -s "$tmp/auth.json" || { echo Q1_AUTHENTIC_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs");const r=JSON.parse(f.readFileSync(process.argv[1]));a.equal(r.scope,"TX2B_AUTHENTIC_BUY_PLUS_SYNTHETIC_PROJECTION_LAB");a.equal(r.parentSha256,"f0b0da6f5a7dbac4ae57ee2ecb181a5b59324edff2407fe8f4af40ea52a765ab");a.equal(r.overlaySha256,"e709a5ae4d986b960e97925f4f75625faf312f734e1ee39883d9bb0f0dc8ffe1");a.equal(r.rows.length,12);console.log(JSON.stringify({scope:r.scope,pass:r.rows.filter(x=>x.pass).length,failed:r.rows.filter(x=>!x.pass).map(x=>x.mode),W:r.W}));a.ok(r.rows.every(x=>x.pass));a.ok(r.rows.slice(0,2).every(x=>x.projected===true&&x.projectionProof===true&&x.projectionClearReady===true&&x.projectionPhysicalClear===false&&x.projectionRows===4));a.ok(r.rows.slice(2).every(x=>x.projected===false));a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.projectionCompletePhysical,false);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/auth.json"
+          test "$arc" = 0
+          rrc=0
+          offline "$out/test_d12_r16_r19.cjs" "$out" >"$tmp/r16.json" 2>"$tmp/r16.err" || rrc=$?
+          test -s "$tmp/r16.json" || { echo R16_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:"D12_R16_R19",pass:r.filter(x=>x.pass).length,rows:r.map(x=>({id:x.id,pass:x.pass,errorCode:x.errorCode}))}));a.equal(r.length,4);a.ok(r.every(x=>x.pass));' "$tmp/r16.json"
+          test "$rrc" = 0
+          sha256sum "$out/tx2b_projection_lab.cjs" | awk '{print "RC2_PROJECTOR_SHA256=" $1}'
+          trc=0
+          offline "$out/test_d12_t9.cjs" "$out" corregido "$tmp/t9.json" >"$tmp/t9.out" 2>"$tmp/t9.err" || trc=$?
+          test -s "$tmp/t9.json" || { echo T9_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:"D12_T9_RC2",pass:r.pass,total:r.total,rows:r.filas.map(x=>({id:x.id,pass:x.pass,esperado:x.esperado,observado:x.observado}))}));a.equal(r.total,17);a.equal(r.pass,17);a.ok(r.filas.every(x=>x.pass));' "$tmp/t9.json"
+          test "$trc" = 0
+          crc=0
+          sudo unshare --net -- setpriv --reuid="$(id -u)" --regid="$(id -g)" --clear-groups env -i PATH=/usr/bin:/bin HOME="$tmp/home" D13C_SOLO=E1,E2,E3,E4,P6_01,P6_02,O1 "$nodebin" "$tmp/auditor/entregas/2026-11-24-D13/c_t9/codigo/test_c_t9.cjs" "$out" corregido "$tmp/c13.json" >"$tmp/c13.out" 2>"$tmp/c13.err" || crc=$?
+          test -s "$tmp/c13.json" || { echo D13C_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:"D13_C_PC_REACHABLE_AFTER_RC3",pass:r.pass,total:r.total,rows:r.filas.map(x=>({id:x.id,pass:x.pass,esperado:x.esperado,observado:x.observado,errcode:x.evidencia?.llamada?.sqlite?.errcode??x.evidencia?.llamada?.errcode??null}))}));a.equal(r.modo,"corregido");a.equal(r.total,7);a.equal(r.pass,7);a.equal(new Set(r.filas.map(x=>x.id)).size,7);a.ok(r.filas.every(x=>!/^P6_0[34]/.test(x.id)));a.ok(r.filas.every(x=>x.pass));' "$tmp/c13.json"
+          test "$crc" = 0
+          pac=0
+          offline "$tmp/auditor/entregas/2026-11-24-D13/a_autoridad/codigo/test_d13_autoridad.cjs" "$out" pa "$tmp/pa.json" >"$tmp/pa.out" 2>"$tmp/pa.err" || pac=$?
+          test -s "$tmp/pa.json" || { echo D13PA_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:"D13_PA_AUTHORITY",pass:r.pass,total:r.total,rows:r.filas.map(x=>({id:x.id,pass:x.pass,esperado:x.esperado,observado:x.observado}))}));a.equal(r.modo,"pa");a.equal(r.total,17);a.equal(r.pass,17);a.equal(new Set(r.filas.map(x=>x.id)).size,17);a.ok(r.filas.every(x=>x.pass));' "$tmp/pa.json"
+          test "$pac" = 0
+          orc=0
+          offline "$out/test_operational_recovery.cjs" "$tmp/src" >"$tmp/op.json" 2>"$tmp/op.err" || orc=$?
+          test -s "$tmp/op.json" || { echo OP1_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs");const r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify(r));a.equal(r.scope,"OP1_OPERATIONAL_RECOVERY_SOURCE_LAB");a.equal(r.rows.length,12);a.equal(new Set(r.rows.map(x=>x.id)).size,12);a.equal(r.pass,12);a.equal(r.fail,0);a.ok(r.rows.every(x=>x.pass));a.equal(r.manifest.parentSourceSha256,"f0b0da6f5a7dbac4ae57ee2ecb181a5b59324edff2407fe8f4af40ea52a765ab");a.equal(r.manifest.rollbackByteExact,true);a.equal(r.manifest.physicalWrites,0);a.equal(r.manifest.certifiesP0,0);a.equal(r.manifest.transportInstalled,false);a.equal(r.manifest.deployable,false);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/op.json"
+          test "$orc" = 0
+          brc=0
+          offline "$out/tx2b_authentic_with_projection.cjs" "$tmp/src" --op2 >"$tmp/buy.json" 2>"$tmp/buy.err" || brc=$?
+          test -s "$tmp/buy.json" || {
+            echo OP2_NO_RECEIPT
+            "$nodebin" -e 'const s=require("node:fs").readFileSync(process.argv[1],"utf8");const safe=[...new Set((s.match(/(?:OP2_[A-Z_]+|ERR_ASSERTION|SyntaxError|ReferenceError|TypeError|ERR_SQLITE_ERROR)/g)||[]))];const frames=[...s.matchAll(/(?:operational_buy_source|tx2b_authentic_with_projection|operational_recovery_source)\.cjs:\d+:\d+/g)].map(x=>x[0]);console.log(JSON.stringify({diagnostic:"OP2_SETUP_FAILURE",safe,frames:[...new Set(frames)]}));' "$tmp/buy.err"
+            exit 1
+          }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs");const r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:r.scope,manifest:r.manifest,pass:r.rows.filter(x=>x.pass).length,total:r.rows.length,failed:r.rows.filter(x=>!x.pass).map(x=>({mode:x.mode,raw:x.raw,port:x.port,prepare:x.prepare,commit:x.commit,reads:x.readbacks,queueReads:x.queueReads,commits:x.commits,receiptClass:x.receiptClass,secondClass:x.secondClass,exception:x.exception,reason:x.reason})),W:r.W}));a.equal(r.scope,"OP2_OPERATIONAL_BUY_SOURCE_LAB");a.equal(r.parentSha256,"1a53990ba686649cc50de6c8bc1565b87696d0edfaa604f3d4b5770819783d72");a.equal(r.rows.length,26);a.equal(new Set(r.rows.map(x=>x.mode)).size,26);a.ok(r.rows.every(x=>x.pass));a.equal(r.manifest.rollbackByteExact,true);a.equal(r.manifest.transportInstalled,false);a.equal(r.manifest.deployable,false);a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.projectionCompletePhysical,false);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/buy.json"
+          test "$brc" = 0
+          src=0
+          offline "$out/test_operational_stop.cjs" "$tmp/src" >"$tmp/stop.json" 2>"$tmp/stop.err" || src=$?
+          test -s "$tmp/stop.json" || {
+            echo OP3_NO_RECEIPT
+            "$nodebin" -e 'const s=require("node:fs").readFileSync(process.argv[1],"utf8");const safe=[...new Set((s.match(/(?:OP3_[A-Z_]+|ERR_ASSERTION|SyntaxError|ReferenceError|TypeError|ERR_SQLITE_ERROR)/g)||[]))];const frames=[...s.matchAll(/(?:operational_stop_source|test_operational_stop|operational_buy_source)\.cjs:\d+:\d+/g)].map(x=>x[0]);console.log(JSON.stringify({diagnostic:"OP3_SETUP_FAILURE",safe,frames:[...new Set(frames)]}));' "$tmp/stop.err"
+            exit 1
+          }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs");const r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify(r));a.equal(r.scope,"OP3A_OPERATIONAL_STOP_SOURCE_LAB");a.equal(r.total,18);a.equal(r.pass,18);a.equal(r.rows.length,18);a.equal(new Set(r.rows.map(x=>x.id)).size,18);a.ok(r.rows.every(x=>x.pass));a.equal(r.manifest.parentSourceSha256,"444eda47c9cd59030c40c10877e136f0a2607d923104cf5ad4421acc9ee46d83");a.equal(r.manifest.rollbackByteExact,true);a.equal(r.manifest.degradedOnly,true);a.equal(r.manifest.physicalWrites,0);a.equal(r.manifest.transportInstalled,false);a.equal(r.manifest.deployable,false);a.equal(r.manifest.certifiesP0,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/stop.json"
+          test "$src" = 0
+          ca=0
+          offline "$out/test_operational_cash.cjs" "$tmp/src" >"$tmp/cash.json" 2>"$tmp/cash.err" || ca=$?
+          test -s "$tmp/cash.json" || {
+            echo OP4A_NO_RECEIPT
+            "$nodebin" -e 'const s=require("node:fs").readFileSync(process.argv[1],"utf8");console.log(JSON.stringify({diagnostic:"OP4A_SETUP_FAILURE",safe:[...new Set((s.match(/(?:OP4_[A-Z_]+|ERR_ASSERTION|SyntaxError|ReferenceError|TypeError)/g)||[]))],frames:[...new Set([...s.matchAll(/(?:operational_cash_source|test_operational_cash)\.cjs:\d+:\d+/g)].map(x=>x[0]))]}));' "$tmp/cash.err"
+            exit 1
+          }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify(r));a.equal(r.scope,"OP4A_EFFECTIVE_CASH_SOURCE_LAB");a.equal(r.total,19);a.equal(r.pass,19);a.equal(new Set(r.rows.map(x=>x.id)).size,19);a.ok(r.rows.every(x=>x.pass));a.equal(r.manifest.parentSourceSha256,"a5212b19b079386063d27c2e0378186a68d41d17c413212fc85141fc3d5a0e0f");a.equal(r.manifest.rollbackByteExact,true);a.equal(r.manifest.physicalWrites,0);a.equal(r.manifest.certifiesP0,0);a.equal(r.manifest.deployable,false);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/cash.json"
+          test "$ca" = 0
+          rb=0
+          offline "$out/test_operational_reconciliation.cjs" "$tmp/src" >"$tmp/rb.json" 2>"$tmp/rb.err" || rb=$?
+          test -s "$tmp/rb.json" || {
+            echo OP4B_NO_RECEIPT
+            "$nodebin" -e 'const s=require("node:fs").readFileSync(process.argv[1],"utf8");console.log(JSON.stringify({diagnostic:"OP4B_SETUP_FAILURE",safe:[...new Set((s.match(/(?:OP4B_[A-Z_]+|ERR_ASSERTION|SyntaxError|ReferenceError|TypeError)/g)||[]))],frames:[...new Set([...s.matchAll(/(?:operational_reconciliation_source|test_operational_reconciliation)\.cjs:\d+:\d+/g)].map(x=>x[0]))]}));' "$tmp/rb.err"
+            exit 1
+          }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify(r));a.equal(r.scope,"OP4B_RECONCILIATION_SOURCE_LAB");a.equal(r.total,30);a.equal(r.pass,30);a.equal(r.rows.length,30);a.equal(new Set(r.rows.map(x=>x.id)).size,30);a.ok(r.rows.every(x=>x.pass));a.equal(r.manifest.parentSourceSha256,"cfa3b6a098cd2048e464984e8c9739f5f1118bace3e580a5e2bd41e1e352edb0");a.equal(r.manifest.rollbackByteExact,true);a.equal(r.manifest.physicalWrites,0);a.equal(r.manifest.certifiesP0,0);a.equal(r.manifest.transportInstalled,false);a.equal(r.manifest.deployable,false);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/rb.json"
+          test "$rb" = 0
+          ra=0
+          offline "$out/test_operational_receipt.cjs" "$tmp/src" >"$tmp/ra.json" 2>"$tmp/ra.err" || ra=$?
+          test -s "$tmp/ra.json" || {
+            echo OP4B2A_NO_RECEIPT
+            "$nodebin" -e 'const s=require("node:fs").readFileSync(process.argv[1],"utf8");console.log(JSON.stringify({diagnostic:"OP4B2A_SETUP_FAILURE",safe:[...new Set((s.match(/(?:OP4B2_[A-Z_]+|ERR_ASSERTION|SyntaxError|ReferenceError|TypeError)/g)||[]))],frames:[...new Set([...s.matchAll(/(?:operational_receipt_source|test_operational_receipt)\.cjs:\d+:\d+/g)].map(x=>x[0]))]}));' "$tmp/ra.err"
+            exit 1
+          }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify(r));a.equal(r.scope,"OP4B2A_AUTHENTICATED_RECEIPT_SOURCE_LAB");a.equal(r.total,35);a.equal(r.pass,35);a.equal(r.rows.length,35);a.equal(new Set(r.rows.map(x=>x.id)).size,35);a.ok(r.rows.every(x=>x.pass));a.equal(r.manifest.parentSourceSha256,"8f1ec807c6bb2ffab63aac6d6f36c02edb9b9cff7c36c5f8764037ae3fcac348");a.equal(r.manifest.rollbackByteExact,true);a.equal(r.manifest.physicalWrites,0);a.equal(r.manifest.certifiesP0,0);a.equal(r.manifest.transportInstalled,false);a.equal(r.manifest.deployable,false);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/ra.json"
+          test "$ra" = 0
+          h3=0
+          offline "$out/test_operational_recovery_callers.cjs" "$tmp/src" >"$tmp/h3.json" 2>"$tmp/h3.err" || h3=$?
+          test -s "$tmp/h3.json" || {
+            echo D14_OP1B_NO_RECEIPT
+            "$nodebin" -e 'const s=require("node:fs").readFileSync(process.argv[1],"utf8");console.log(JSON.stringify({diagnostic:"D14_OP1B_SETUP_FAILURE",safe:[...new Set((s.match(/(?:OP1B_[A-Z_]+|ERR_ASSERTION|SyntaxError|ReferenceError|TypeError)/g)||[]))],frames:[...new Set([...s.matchAll(/(?:operational_recovery_callers_source|test_operational_recovery_callers)\.cjs:\d+:\d+/g)].map(x=>x[0]))]}));' "$tmp/h3.err"
+            exit 1
+          }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify(r));a.equal(r.scope,"D14_OP1B_SOURCE_LAB");a.equal(r.total,18);a.equal(r.pass,18);a.equal(r.rows.length,18);a.equal(new Set(r.rows.map(x=>x.id)).size,18);a.ok(r.rows.every(x=>x.pass));a.equal(r.manifest.parentSourceSha256,"4e97f6b0c32211c881730943db544eaef5bcd7bf40912a1ecfdcd573702de53e");a.equal(r.manifest.callersLegacyRestantes,0);a.equal(r.manifest.rollbackByteExact,true);a.equal(r.manifest.physicalWrites,0);a.equal(r.manifest.certifiesP0,0);a.equal(r.manifest.deployable,false);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/h3.json"
+          test "$h3" = 0
+          for mode in congelado pt_h5; do
+            if [ "$mode" = congelado ]; then dir="$tmp/parent/lab/trade-integrated-baseline"; else dir="$out"; fi
+            g=0
+            offline "$out/test_d14_stop_gate.cjs" "$dir" "$mode" "$tmp/g-$mode.json" >"$tmp/g-$mode.out" 2>"$tmp/g-$mode.err" || g=$?
+            test -s "$tmp/g-$mode.json" || { echo D14_PG1_NO_RECEIPT; exit 1; }
+            "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify(r));a.equal(r.scope,"D14_A2_STOP_GATE_LAB");a.equal(r.modo,process.argv[2]);a.equal(r.total,15);a.equal(r.pass,15);a.equal(r.filas.length,15);a.equal(new Set(r.filas.map(x=>x.id)).size,15);a.ok(r.filas.every(x=>x.pass));a.equal(r.physicalWrites,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");if(r.modo==="congelado"){a.equal(r.proyector,"1d8e27268e10740467c64ba650f73e48b01f8ef1c11f1ec4fcec8f1b5e9c2d40");a.equal(r.autoridad,"f3895a4d40bf077b07453b2202a0c5b077d9765d1ffcb642de468ed42e8725b2");}else{a.equal(r.autoridad,process.env.EXPECTED_AUTHORITY_SHA256);a.equal(r.proyector,process.env.EXPECTED_PROJECTOR_SHA256);}' "$tmp/g-$mode.json" "$mode"
+            test "$g" = 0
+          done
+          pt=0
+          offline "$out/test_d14_op3c_trail.cjs" "$tmp/src" "$out" "$tmp/pt.json" TRINQUETE >"$tmp/pt.out" 2>"$tmp/pt.err" || pt=$?
+          test -s "$tmp/pt.json" || {
+            echo D14_PT_NO_RECEIPT
+            "$nodebin" -e 'const s=require("node:fs").readFileSync(process.argv[1],"utf8");console.log(JSON.stringify({diagnostic:"D14_PT_SETUP_FAILURE",safe:[...new Set((s.match(/(?:OP3C_[A-Z_]+|D14_[A-Z_]+|ERR_ASSERTION|SyntaxError|ReferenceError|TypeError)/g)||[]))],frames:[...new Set([...s.matchAll(/(?:operational_stop_op3c_source|test_d14_op3c_trail)\.cjs:\d+:\d+/g)].map(x=>x[0]))]}));' "$tmp/pt.err"
+            exit 1
+          }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:r.scope,politica:r.politica,manifest:r.manifest,autoridad:r.autoridad,pass:r.pass,total:r.total,rows:r.rows.map(x=>({id:x.id,pass:x.pass,error:x.error,detail:x.pass?undefined:x.detail,parity:x.id.startsWith("C15")&&x.pass?{oraculoSha256:x.evidencia.oraculoSha256,sesiones:x.evidencia.sesiones,nivelParidadIdentico:x.evidencia.nivelParidadIdentico,sesionesConservadoras:x.evidencia.sesionesConservadoras,decisionesIguales:x.evidencia.decisionesIguales,primeraSalidaBacktest:x.evidencia.primeraSalidaBacktest,primeraRupturaAutorizada:x.evidencia.primeraRupturaAutorizada}:undefined})),W:r.W}));a.equal(r.scope,"D14_B1_OP3C_TRAIL_LAB");a.equal(r.politica,"TRINQUETE");a.equal(r.total,21);a.equal(r.pass,21);a.equal(new Set(r.rows.map(x=>x.id)).size,21);a.ok(r.rows.every(x=>x.pass));a.equal(r.manifest.parentSourceSha256,"a9184150605344f31c3e02b8781b88f42bb298bde1bcf8e95486ec913e85ce22");a.equal(r.manifest.rollbackByteExact,true);a.equal(r.manifest.deployable,false);a.equal(r.manifest.transportInstalled,false);a.equal(r.manifest.certifiesP0,0);a.equal(r.physicalWrites,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/pt.json"
+          test "$pt" = 0
+          echo D14_PT_PLUS_488_REGRESSION_15_PARENT_21_TRAIL_10_MUTANTS_LAB_NO_W_NO_GAS_NO_DEPLOY
+          q=0
+          offline "$out/test_operational_queue.cjs" "$tmp/src" >"$tmp/q.json" 2>"$tmp/q.err" || q=$?
+          test -s "$tmp/q.json" || {
+            echo OP3CQ_NO_RECEIPT
+            "$nodebin" -e 'const s=require("node:fs").readFileSync(process.argv[1],"utf8");console.log(JSON.stringify({diagnostic:"OP3CQ_SETUP_FAILURE",safe:[...new Set((s.match(/(?:OP3CQ_[A-Z_]+|ERR_ASSERTION|SyntaxError|ReferenceError|TypeError|MODULE_NOT_FOUND)/g)||[]))],frames:[...new Set([...s.matchAll(/(?:operational_queue_source|test_operational_queue)\.cjs:\d+:\d+/g)].map(x=>x[0]))]}));' "$tmp/q.err"
+            exit 1
+          }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:r.scope,manifest:r.manifest,pass:r.pass,total:r.total,rows:r.rows.map(x=>({id:x.id,pass:x.pass,error:x.error})),W:r.W}));a.equal(r.scope,"OP3CQ1_QUEUE_OBSERVATION_LAB");a.equal(r.total,22);a.equal(r.pass,22);a.equal(r.rows.length,22);a.equal(new Set(r.rows.map(x=>x.id)).size,22);a.ok(r.rows.every(x=>x.pass));a.equal(r.manifest.parentSourceSha256,"8401d40828ce61554d906ac3d6405ee17c2446bc82d12431608812df7140ac5d");a.equal(r.manifest.rollbackByteExact,true);a.equal(r.manifest.physicalWrites,0);a.equal(r.manifest.certifiesP0,0);a.equal(r.manifest.transportInstalled,false);a.equal(r.manifest.deployable,false);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/q.json"
+          test "$q" = 0
+          echo OP3CQ1_509_REGRESSION_15_PARENT_22_QUEUE_10_MUTANTS_LAB_NO_W_NO_GAS_NO_DEPLOY
+          qp=0
+          offline "$out/test_operational_queue_projection.cjs" "$tmp/src" >"$tmp/qp.json" 2>"$tmp/qp.err" || qp=$?
+          test -s "$tmp/qp.json" || {
+            echo OP3CQ2_NO_RECEIPT
+            "$nodebin" -e 'const s=require("node:fs").readFileSync(process.argv[1],"utf8");console.log(JSON.stringify({diagnostic:"OP3CQ2_SETUP_FAILURE",safe:[...new Set((s.match(/(?:OP3CQ2_[A-Z_]+|ERR_ASSERTION|SyntaxError|ReferenceError|TypeError|MODULE_NOT_FOUND)/g)||[]))],frames:[...new Set([...s.matchAll(/(?:operational_queue_projection_source|test_operational_queue_projection)\.cjs:\d+:\d+/g)].map(x=>x[0]))]}));' "$tmp/qp.err"
+            exit 1
+          }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:r.scope,manifest:r.manifest,pass:r.pass,total:r.total,rows:r.rows.map(x=>({id:x.id,pass:x.pass,error:x.error})),W:r.W}));a.equal(r.scope,"OP3CQ2_PROJECTION_OBSERVATION_LAB");a.equal(r.total,20);a.equal(r.pass,20);a.equal(r.rows.length,20);a.equal(new Set(r.rows.map(x=>x.id)).size,20);a.ok(r.rows.every(x=>x.pass));a.equal(r.manifest.parentSourceSha256,"a145b3b3f94620b3b9f7f800ef0e2c1c217f41035b35e26a736e8ba8f8e64367");a.equal(r.manifest.rollbackByteExact,true);a.equal(r.manifest.physicalWrites,0);a.equal(r.manifest.certifiesP0,0);a.equal(r.manifest.transportInstalled,false);a.equal(r.manifest.deployable,false);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/qp.json"
+          test "$qp" = 0
+
+          qa=0
+          offline "$out/test_operational_queue_adversarial.cjs" "$tmp/src" >"$tmp/qa.json" 2>"$tmp/qa.err" || qa=$?
+          test -s "$tmp/qa.json" || { echo OP3CQ3_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:r.scope,fullSourceSha256:r.fullSourceSha256,pass:r.pass,total:r.total,rows:r.rows.map(x=>({id:x.id,pass:x.pass,error:x.error})),W:r.W}));a.equal(r.scope,"OP3CQ3_ADVERSARIAL_OBSERVATION_LAB");a.equal(r.total,10);a.equal(r.pass,10);a.equal(r.rows.length,10);a.ok(r.rows.every(x=>x.pass));a.equal(r.fullSourceSha256,"12217cdbbe5b50dcb2b4085505ab34745f2b540fc2efb2b1ef77f6d90ee060b6");a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/qa.json"
+          test "$qa" = 0
+          h5=0
+          offline "$out/test_d15_h5_ready.cjs" "$out" pt_h5 "$tmp/h5.json" >"$tmp/h5.out" 2>"$tmp/h5.err" || h5=$?
+          test -s "$tmp/h5.json" || { echo D15_H5_NO_RECEIPT; exit 1; }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify(r));a.equal(r.scope,"D15_H5_READY_STOP_LAB");a.equal(r.modo,"pt_h5");a.equal(r.filas.length,11);a.equal(new Set(r.filas.map(x=>x.id)).size,11);a.equal(r.incoherencias,0);a.equal(r.autoridad,process.env.EXPECTED_AUTHORITY_SHA256);a.equal(r.physicalWrites,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/h5.json"
+          test "$h5" = 0
+          echo D15_H5_561_REGRESSION_15_PARENT_11_READY_10_MUTANTS_LAB_NO_W_NO_GAS_NO_DEPLOY
+          offline "$out/operational_buy_preflight_h6_source.cjs" "$tmp/src" "$tmp/parent.gs" "$tmp/h6.gs" >"$tmp/build.json" 2>"$tmp/build.err" || {
+            echo D15_H6_BUILD_FAILED
+            "$nodebin" -e 'const s=require("node:fs").readFileSync(process.argv[1],"utf8");console.log(JSON.stringify({diagnostic:"D15_H6_BUILD_FAILED",safe:[...new Set(s.match(/(?:D15_H6_[A-Z0-9_]+|ERR_ASSERTION|SyntaxError|ReferenceError|TypeError|MODULE_NOT_FOUND)/g)||[])],frames:[...new Set([...s.matchAll(/(?:operational_buy_preflight_h6_source|73x39j-c18-p0c5w-source-compatibility-local)\.cjs:\d+:\d+/g)].map(x=>x[0]))]}));' "$tmp/build.err"
+            exit 1
+          }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:"D15_H6_BUILD_LAB",manifest:r}));a.equal(r.parentSourceSha256,"12217cdbbe5b50dcb2b4085505ab34745f2b540fc2efb2b1ef77f6d90ee060b6");a.deepEqual(r.changedOwners,["ejecutarAprobadas","_c8eBuyConfigGate"]);a.equal(r.newOwners.length,11);a.equal(r.rollbackByteExact,true);a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.transportInstalled,false);a.equal(r.deployable,false);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/build.json"
+          h=0
+          offline "$out/test_operational_buy_preflight_h6.cjs" "$tmp/parent.gs" original "$tmp/parent.json" >"$tmp/parent.out" 2>"$tmp/parent.err" || h=$?
+          test "$h" = 0
+          h=0
+          offline "$out/test_operational_buy_preflight_h6.cjs" "$tmp/h6.gs" parcheado "$tmp/h6.json" >"$tmp/h6.out" 2>"$tmp/h6.err" || h=$?
+          test -s "$tmp/h6.json" || {
+            echo D15_H6_NO_RECEIPT
+            "$nodebin" -e 'const s=require("node:fs").readFileSync(process.argv[1],"utf8");console.log(JSON.stringify({diagnostic:"D15_H6_SETUP_FAILED",safe:[...new Set(s.match(/(?:D15_H6_[A-Z0-9_]+|ERR_ASSERTION|SyntaxError|ReferenceError|TypeError|MODULE_NOT_FOUND)/g)||[])],frames:[...new Set([...s.matchAll(/(?:test_operational_buy_preflight_h6|d15_gas_effects_fixture)\.cjs:\d+:\d+/g)].map(x=>x[0]))]}));' "$tmp/h6.err"
+            exit 1
+          }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),read=p=>JSON.parse(f.readFileSync(p)),p=read(process.argv[1]),r=read(process.argv[2]),m=read(process.argv[3]),happy=r.escenarios.filter(x=>x.alcanzaPuerto),same=happy.map(x=>({id:x.id,pass:JSON.stringify(x.args)===JSON.stringify(p.escenarios.find(y=>y.id===x.id)?.args)}));console.log(JSON.stringify({scope:r.scope,sourceSha256:r.fuenteSha256,properties:r.propiedades,pass:r.pass,scenarios:r.escenarios.map(x=>({id:x.id,port:x.alcanzaPuerto,beforeLock:x.antesDelLock.length,beforePort:x.antesDelPuertoNoAlerta.length,exception:x.resultado.startsWith("EXCEPCION:")})),units:r.unidades.map(x=>({id:x.id,pass:x.pass})),integration:r.integracion,argumentParity:same,parentNegative:{P1:p.propiedades.P1_SIN_EFECTOS_ANTES_DEL_LOCK,P2:p.propiedades.P2_ANTES_DEL_PUERTO_SOLO_LOCK_O_ALERTA_FALLO_CERRADO,missingConfig:p.escenarios.find(x=>x.id==="S03_CONFIG_AUSENTE").alcanzaPuerto,missingUniverse:p.escenarios.find(x=>x.id==="S17_UNIVERSO_AUSENTE").alcanzaPuerto},W:r.W}));a.equal(r.scope,"D15_H6_EFECTOS_PREVIOS_PUERTO_BUY_LAB");a.equal(r.fuenteSha256,m.fullSourceSha256);a.equal(p.fuenteSha256,m.parentSourceSha256);a.equal(r.escenarios.length,21);a.equal(r.unidades.length,20);a.equal(r.integracion.length,2);a.equal(happy.length,6);a.ok(same.every(x=>x.pass));a.equal(p.propiedades.P1_SIN_EFECTOS_ANTES_DEL_LOCK,false);a.equal(p.propiedades.P2_ANTES_DEL_PUERTO_SOLO_LOCK_O_ALERTA_FALLO_CERRADO,false);a.equal(p.escenarios.find(x=>x.id==="S03_CONFIG_AUSENTE").alcanzaPuerto,true);a.equal(p.escenarios.find(x=>x.id==="S17_UNIVERSO_AUSENTE").alcanzaPuerto,true);a.equal(r.pass,true);a.ok(Object.values(r.propiedades).every(x=>x===true));a.ok(r.unidades.every(x=>x.pass));a.ok(r.integracion.every(x=>x.pass));a.equal(r.physicalWrites,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/parent.json" "$tmp/h6.json" "$tmp/build.json"
+          test "$h" = 0
+          echo D15_H6_21_SCENARIOS_20_UNITS_2_AUTHENTIC_BUY_6_ARGUMENT_PARITY_LAB_NO_W_NO_GAS_NO_DEPLOY
+          rc=0
+          offline "$out/test_operational_settlement_plan_lab.cjs" "$tmp/src" >"$tmp/result.json" 2>"$tmp/result.err" || rc=$?
+          test -s "$tmp/result.json" || {
+            echo OP4B2B1_NO_RECEIPT
+            "$nodebin" -e 'const s=require("node:fs").readFileSync(process.argv[1],"utf8");console.log(JSON.stringify({diagnostic:"OP4B2B1_SETUP_FAILURE",safe:[...new Set(s.match(/(?:OP4B2B_[A-Z0-9_]+|D15_H6_[A-Z0-9_]+|ERR_ASSERTION|SyntaxError|ReferenceError|TypeError|MODULE_NOT_FOUND)/g)||[])],frames:[...new Set([...s.matchAll(/(?:operational_settlement_plan_lab|test_operational_settlement_plan_lab|operational_buy_preflight_h6_source)\.cjs:\d+:\d+/g)].map(x=>x[0]))]}));' "$tmp/result.err"
+            exit 1
+          }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:r.scope,manifest:r.manifest,pass:r.pass,total:r.total,rows:r.rows.map(x=>({id:x.id,pass:x.pass,error:x.error,detail:x.detail})),W:r.W}));a.equal(r.scope,"OP4B2B1_SETTLEMENT_PLAN_LAB");a.equal(r.total,16);a.equal(r.pass,16);a.deepEqual(r.rows.map(x=>x.id.slice(0,4)),Array.from({length:16},(_,i)=>"SP"+String(i+1).padStart(2,"0")));a.ok(r.rows.every(x=>x.pass));a.equal(r.manifest.parentSourceSha256,"4c9b2296b62a0516909eb91e1a5c07edfe0aa16c7fb36f9f3d40ae3eda24b775");a.equal(r.manifest.sourceUnchanged,true);a.equal(r.manifest.physicalWrites,0);a.equal(r.manifest.certifiesP0,0);a.equal(r.manifest.deployable,false);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/result.json"
+          test "$rc" = 0
+          echo OP4B2B1_16_SETTLEMENT_PLAN_LAB_NO_W_NO_GAS_NO_DEPLOY
+          rc=0
+          offline "$out/test_operational_settlement_ledger_lab.cjs" "$tmp/src" >"$tmp/result.json" 2>"$tmp/result.err" || rc=$?
+          test -s "$tmp/result.json" || {
+            echo OP4B2B2_NO_RECEIPT
+            "$nodebin" -e 'const s=require("node:fs").readFileSync(process.argv[1],"utf8");console.log(JSON.stringify({diagnostic:"OP4B2B2_SETUP_FAILURE",safe:[...new Set(s.match(/(?:TR_[A-Z0-9_]+|OP4B2B_[A-Z0-9_]+|ERR_ASSERTION|SyntaxError|ReferenceError|TypeError|MODULE_NOT_FOUND)/g)||[])],frames:[...new Set([...s.matchAll(/(?:operational_settlement_ledger_lab|test_operational_settlement_ledger_lab|authority_c9w_tx1_d10)\.cjs:\d+:\d+/g)].map(x=>x[0]))]}));' "$tmp/result.err"
+            exit 1
+          }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:r.scope,parentSourceSha256:r.parentSourceSha256,pass:r.pass,total:r.total,rows:r.rows.map(x=>({id:x.id,pass:x.pass,error:x.error,detail:x.detail})),W:r.W,externalProjection:r.externalProjection}));a.equal(r.scope,"OP4B2B2_DURABLE_LEDGER_LAB");a.equal(r.total,18);a.equal(r.pass,18);a.deepEqual(r.rows.map(x=>x.id.slice(0,4)),Array.from({length:18},(_,i)=>"ST"+String(i+1).padStart(2,"0")));a.ok(r.rows.every(x=>x.pass));a.equal(r.parentSourceSha256,"4c9b2296b62a0516909eb91e1a5c07edfe0aa16c7fb36f9f3d40ae3eda24b775");a.equal(r.externalProjection,false);a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/result.json"
+          test "$rc" = 0
+          echo OP4B2B2_18_DURABLE_LEDGER_LAB_NO_W_NO_GAS_NO_DEPLOY
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_settlement_lots_lab.cjs)" = 1205e0266c271124b950ff41b8c717338226502e
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_settlement_projection_lab.cjs)" = f5b92620a41797bd13ac5b8e30cebd3d27d75148
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_settlement_projection_lab.cjs)" = 7b5952e66ccb1e295bd186c9215fbc3ee84bdf34
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_settlement_input_lab.cjs)" = a69322b6aed14db68f79be94100d970b84ac925e
+          for spec in "projection:14:OP4B2B3_SETTLEMENT_PROJECTION_LAB" "input:34:OP4B2B4C_RECOVERY_ADMISSION_LAB"; do
+            IFS=: read -r part count scope <<< "$spec"
+            rc=0
+            offline "$out/test_operational_settlement_${part}_lab.cjs" "$tmp/src" >"$tmp/result-$part.json" 2>"$tmp/result-$part.err" || rc=$?
+            test -s "$tmp/result-$part.json" || {
+              echo "OP4B2B4C_NO_RECEIPT $part"
+              "$nodebin" -e 'const s=require("node:fs").readFileSync(process.argv[1],"utf8");console.log(JSON.stringify({diagnostic:"OP4B2B4C_SETUP_FAILURE",safe:[...new Set(s.match(/(?:TRL_[A-Z0-9_]+|TRP_[A-Z0-9_]+|TR_[A-Z0-9_]+|OP4B2B_[A-Z0-9_]+|ERR_ASSERTION|SyntaxError|ReferenceError|TypeError|MODULE_NOT_FOUND)/g)||[])],frames:[...new Set([...s.matchAll(/(?:operational_settlement_[a-z_]+)\.cjs:\d+:\d+/g)].map(x=>x[0]))]}));' "$tmp/result-$part.err"
+              exit 1
+            }
+            "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1])),n=Number(process.argv[2]),s=process.argv[3];console.log(JSON.stringify({scope:r.scope,pass:r.pass,total:r.total,rows:r.rows,W:r.W}));a.equal(r.scope,s);a.equal(r.total,n);a.equal(r.pass,n);a.equal(r.rows.length,n);a.equal(new Set(r.rows.map(x=>x.id)).size,n);a.ok(r.rows.every(x=>x.pass));a.equal(r.parentSourceSha256??r.manifest?.parentSourceSha256,"4c9b2296b62a0516909eb91e1a5c07edfe0aa16c7fb36f9f3d40ae3eda24b775");a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/result-$part.json" "$count" "$scope"
+            test "$rc" = 0
+          done
+          echo OP4B2B4C_572_REGRESSION_15_PARENT_43_H6_16_PLAN_18_LEDGER_14_PROJECTION_34_INPUT_LOTS_RECOVERY_10_MUTANTS_LAB_NO_W_NO_GAS_NO_DEPLOY
+
+          echo G4BEF_R1_712_HISTORIC_10_MUTANTS_LAB_NO_W_NO_GAS_NO_DEPLOY
+  causal_mutants:
+    needs: second_close
+    if: github.repository == 'supersodan-netizen/trade'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Pinned audited baseline read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: f7a0c17a6979c4cedcb5f077fb331e991e56941e
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-source
+      - name: Pinned auditor delivery read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: 08496f786a2233c4633ed7224410d8165a906a0d
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-audit
+      - name: Pinned PA1 candidate read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: 2a83dad855394dc521fdd5b44356a47ad8717c21
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-lab
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Verify PA1 causal mutation receipts offline
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C private-source rev-parse HEAD)" = f7a0c17a6979c4cedcb5f077fb331e991e56941e
+          test "$(git -C private-audit rev-parse HEAD)" = 08496f786a2233c4633ed7224410d8165a906a0d
+          test "$(git -C private-lab rev-parse HEAD)" = 2a83dad855394dc521fdd5b44356a47ad8717c21
+          test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
+          tmp=$(mktemp -d)
+          trap 'rm -rf "$tmp"' EXIT
+          mkdir "$tmp/src" "$tmp/audit" "$tmp/team" "$tmp/out" "$tmp/home"
+          git -C private-source archive HEAD candidate scripts docs tests lab | tar -x -C "$tmp/src"
+          git -C private-audit archive HEAD entregas/2026-11-27-D18 | tar -x -C "$tmp/audit"
+          git -C private-lab archive HEAD lab/trade-integrated-baseline | tar -x -C "$tmp/team"
+          test -z "$(find "$tmp/src" "$tmp/audit" "$tmp/team" -type f \( -name '.clasp*' -o -name '.env*' -o -name '*.pem' \) -print -quit)"
+          nodebin=$(command -v node)
+          audit="$tmp/audit/entregas/2026-11-27-D18"
+          src="$tmp/src"
+          out="$tmp/out"
+          offline() {
+            sudo unshare --net -- setpriv --reuid="$(id -u)" --regid="$(id -g)" --clear-groups env -i PATH="$(dirname "$nodebin"):/usr/bin:/bin" HOME="$tmp/home" NODE_NO_WARNINGS=1 "$nodebin" "$@"
+          }
+          offline -e 'const fs=require("node:fs"),p=require("node:path"),h=require("node:crypto"),a=require("node:assert/strict");const d=process.argv[1],m=JSON.parse(fs.readFileSync(p.join(d,"MANIFIESTO.json")));a.equal(m.archivos.length,15);for(const x of m.archivos){const b=fs.readFileSync(p.join(d,x.ruta));a.equal(b.length,x.bytes);a.equal(h.createHash("sha256").update(b).digest("hex"),x.sha256)};console.log("D18_MANIFEST_15_HASHES_OK")' "$audit"
+          test "$(sha256sum "$src/lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs" | cut -d' ' -f1)" = 30c7c2125a200eda93d111f73de48306c5bf30d6ade5761a90dabdd155b9c72f
+          c="$audit/codigo"
+          run_checked() {
+            local name="$1"; shift
+            if ! offline "$@" >"$out/$name.stdout" 2>"$out/$name.stderr"; then echo "D18_STEP_FAILED $name"; exit 1; fi
+          }
+          lab="$tmp/team/lab/trade-integrated-baseline"
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 04c037fa0be51b67cd1c98734e60b11e36fc44f2
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/d18_stop_residente_lab.cjs)" = 5b5cf9fcf35706e0a50c50c4c05256d12be54b87
+          echo "PA1_AUTHORITY_SHA256 $(sha256sum "$lab/authority_c9w_tx1_d10.cjs" | cut -d' ' -f1)"
+          echo "PA1_RESIDENT_SHA256 $(sha256sum "$lab/d18_stop_residente_lab.cjs" | cut -d' ' -f1)"
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_pa1_mutants_lab.cjs)" = 89029b3e9738d038f248caa5f616b77589541a43
+          rc=0
+          offline "$lab/test_pa1_mutants_lab.cjs" "$src" "$audit" "$out/mutants.json" >"$out/mutants.stdout" 2>"$out/mutants.stderr" || rc=$?
+          test -s "$out/mutants.json" || { echo PA1_MUTANTS_NO_RECEIPT; exit 1; }
+          cat "$out/mutants.json"
+          offline -e 'const a=require("node:assert/strict"),j=require(process.argv[1]);a.equal(j.scope,"PA1_R1_NATIVE_SEMANTIC_MUTANTS_LAB");a.equal(j.total,15);a.equal(j.detected,15);a.equal(j.invalid,0);a.equal(j.controls.length,2);a.ok(j.controls.every(x=>x.pass===x.total));a.equal(new Set(j.rows.map(x=>x.id)).size,15);a.ok(j.rows.every(x=>x.valid&&x.detected&&x.failed.includes(x.expected)));a.equal(j.physicalWrites,0);a.equal(j.certifiesP0,0);a.equal(j.W,"HOLD_EXTERNAL_EVIDENCE");' "$out/mutants.json"
+          test "$rc" = 0
+          echo PA1_15_CAUSAL_MUTANTS_LAB_NO_W_NO_GAS_NO_DEPLOY
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_g4b3_second_close_mutants_lab.cjs)" = 2cd8525a8de223c83ca08bd6858e379f807dfa5c
+          rc=0
+          offline "$lab/test_g4b3_second_close_mutants_lab.cjs" "$src" "$out/g4mut.json" >"$out/g4mut.stdout" 2>"$out/g4mut.stderr" || rc=$?
+          test -s "$out/g4mut.json" || { echo G4_MUTANTS_NO_RECEIPT; exit 1; }
+          cat "$out/g4mut.json"
+          offline -e 'const a=require("node:assert/strict"),j=require(process.argv[1]);a.equal(j.scope,"G4BEF_CAUSAL_MUTATION_LAB");a.equal(j.total,4);a.equal(j.detected,4);a.equal(j.invalid,0);a.equal(j.originalsUntouched,true);a.ok(j.rows.every(x=>x.valid&&x.detected));a.equal(j.physicalWrites,0);a.equal(j.certifiesP0,0);a.equal(j.W,"HOLD_EXTERNAL_EVIDENCE");' "$out/g4mut.json"
+          test "$rc" = 0
+          echo G4BEF_R1_4_CAUSAL_MUTANTS_LAB_NO_W_NO_GAS_NO_DEPLOY
+  op5:
+    needs: second_close
+    if: github.repository == 'supersodan-netizen/trade'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Pinned canonical source read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: 36ec5545a504f2a8031c4d1754d1fc36675e8f63
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-source
+      - name: Pinned private materialized baseline read-only checkout
+        uses: actions/checkout@v5
+        with:
+          repository: supersodan-netizen/trade-staging
+          ref: 2a83dad855394dc521fdd5b44356a47ad8717c21
+          ssh-key: ${{ secrets.TRADE_STAGING_DEPLOY_KEY }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+          path: private-lab
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: OP5a E19 single decision and annual opening
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C private-source rev-parse HEAD)" = 36ec5545a504f2a8031c4d1754d1fc36675e8f63
+          test "$(git -C private-source rev-parse HEAD:candidate/Codigo.gs)" = c7c9d96dec84a605ff0b7ed330b3330db67c5aee
+          test "$(git -C private-lab rev-parse HEAD)" = 2a83dad855394dc521fdd5b44356a47ad8717c21
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs)" = 04c037fa0be51b67cd1c98734e60b11e36fc44f2
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_buy_source.cjs)" = bb753f755868c7c1610a4e9f18bc111b8663f177
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_recovery_source.cjs)" = a0cff670b27567d1558794114e06506e79d9b83e
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_source.cjs)" = 6f6fde50fcf7507c64131f3a5de18527ced1b3d0
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/q2_fixture_lab.cjs)" = e54a79779c726765b550cbfd53cda8162a418e7e
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_d12_r16_r19.cjs)" = c8fc580a987e6ec5e03acd4e8a35512922cf7c97
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_d12_t9.cjs)" = eb196904a8d1e38e5131a10cf94fd39c6e87baf3
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_recovery.cjs)" = d8a76904d8b73202663847da7468e8c75bf6d5ce
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_stop.cjs)" = d3ca338da8da6d938b204f6b510f25bd40a04bcd
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_stop_admission.cjs)" = 96742e057e70f29f8ed8cb6d07e8c91ba76100e3
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_pb_stop.cjs)" = 3d5291877e97099568757d07dab6e59caede1730
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_q1.cjs)" = e86bf304ef0f94f222b0e0f42370a32cc2d7b700
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_q2.cjs)" = e2ac7b1ceb233ffbc9ee1c69f7dba2f0a92a727e
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_recovery_scan.cjs)" = 0597c0571143e694293722776a6abd4da874990c
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_rs2c3_mutants.cjs)" = eeede94eb1691403328d1578dd13a781f87f2c22
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_tx2b_projection.cjs)" = 4b4118d7b726d6adca83ced3770be594205d45d6
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_authentic_with_projection.cjs)" = aa1644aaf9dbbdf579b4bca51d61a1c63320bc6c
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/tx2b_projection_lab.cjs)" = c24fbcab305b21b24545db36fd2075c42e16f76e
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_cash_source.cjs)" = c0c15470a3360723866b21ea6cd133b81d1d4257
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_cash.cjs)" = c2f7b1efc1ecff7d4b3cafabb9a77081a249f9f3
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_reconciliation_source.cjs)" = 5279c2f2ba0ec4d52c25f401b1206a817c57e50e
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_reconciliation.cjs)" = 7de01239271c6c0678583fa69df599965bc20db7
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_receipt_source.cjs)" = 2f93b803cc0c0125e4b1960a3e39a8a812a7c3a6
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_receipt.cjs)" = faf8214a82ca5d64b773864c816ad26b4dc87590
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_recovery_callers_source.cjs)" = 5b9182ab7eb88389a89ff2d1b585f2b523ead200
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_recovery_callers.cjs)" = 2936db8ee1c7760298d80afaaf3f887b2739eace
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_d14_stop_gate.cjs)" = 12ff993f6251a62203956eb62a911139f1dfd038
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_stop_op3c_source.cjs)" = 4e4fcffb3fdf27064b3c85b487134b4526fb6b40
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_d14_op3c_trail.cjs)" = bc5192cba116ea9a494de88720488d7c29573e2b
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_queue_source.cjs)" = c10a8c778906e4d13fb88234b22900e83cfff677
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_queue.cjs)" = 37faf302dff90d1278089df2271ecf39757791f2
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_queue_projection_source.cjs)" = 6adb2489214c4979997d480ab7dda5143546dbe2
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_queue_projection.cjs)" = 0720bf2906e1b04e59e7ca47ac8661463e99d4ba
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_d15_h5_ready.cjs)" = b3f5b73eb732d2f2002a8c1fcefb108484bfd7c9
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_queue_adversarial.cjs)" = 8286fa01a7f96e62788bc883b26979d3ccb2bac9
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_buy_preflight_h6_source.cjs)" = 455b25a0132e70bd73132e74aa949aca11c5b912
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/d15_gas_effects_fixture.cjs)" = a0dc15eed353e3a803e3d2fa8ee007ea39ea3cd6
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_buy_preflight_h6.cjs)" = 074b4a10a164b2df3df18cda88eabebdf47cce93
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_settlement_plan_lab.cjs)" = fde48b1ef28420b45eb7ba7013477763417a4555
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_settlement_plan_lab.cjs)" = d99d32f0988b0d4af740098d64ecb14a02c8c5e6
+          tmp=$(mktemp -d)
+          trap 'rm -rf "$tmp"' EXIT
+          mkdir "$tmp/src" "$tmp/gate" "$tmp/home"
+          git -C private-source archive HEAD candidate scripts docs tests lab | tar -x -C "$tmp/src"
+          git -C private-lab archive HEAD lab/c9w-full-d11-x03 lab/c9w-full-d11-strict-q1 lab/trade-integrated-baseline | tar -x -C "$tmp/gate"
+          test -z "$(find "$tmp/src" "$tmp/gate" -type f \( -name '.clasp*' -o -name '.env*' -o -name '*.pem' \) -print -quit)"
+          nodebin=$(command -v node)
+          out="$tmp/gate/lab/trade-integrated-baseline"
+          offline() {
+            sudo unshare --net -- setpriv --reuid="$(id -u)" --regid="$(id -g)" --clear-groups env -i PATH=/usr/bin:/bin HOME="$tmp/home" "$nodebin" "$@"
+          }
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_settlement_ledger_lab.cjs)" = 8b4a8ecb7252575983c9256b1d7c8ebfdfd62b4c
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_settlement_ledger_lab.cjs)" = 00bebe73d098af5d656bf342d4bd159479c749ad
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_settlement_lots_lab.cjs)" = 1205e0266c271124b950ff41b8c717338226502e
+          for f in "$out"/*.cjs; do offline --check "$f" >/dev/null 2>&1 || { echo "OP4B2B2_SYNTAX_FAILED $(basename "$f")"; exit 1; }; done
+          echo "OP4B2B2_AUTHORITY_SHA256 $(sha256sum "$out/authority_c9w_tx1_d10.cjs" | cut -d' ' -f1)"
+          echo "OP4B2B2_PROJECTOR_SHA256 $(sha256sum "$out/tx2b_projection_lab.cjs" | cut -d' ' -f1)"
+
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_settlement_projection_lab.cjs)" = f5b92620a41797bd13ac5b8e30cebd3d27d75148
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_settlement_projection_lab.cjs)" = 7b5952e66ccb1e295bd186c9215fbc3ee84bdf34
+          test "$(sha256sum "$out/authority_c9w_tx1_d10.cjs" | cut -d' ' -f1)" = "$(git -C private-lab show HEAD:lab/trade-integrated-baseline/authority_c9w_tx1_d10.cjs | sha256sum | cut -d' ' -f1)"
+          test "$(sha256sum "$out/tx2b_projection_lab.cjs" | cut -d' ' -f1)" = "$(git -C private-lab show HEAD:lab/trade-integrated-baseline/tx2b_projection_lab.cjs | sha256sum | cut -d' ' -f1)"
+
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_settlement_input_lab.cjs)" = a69322b6aed14db68f79be94100d970b84ac925e
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_e19_opening_lab.cjs)" = a83a8a0d1bd8f89c7334355e4cc2964564b1982c
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_e19_opening_lab.cjs)" = 23bb4b2351eadf7024cc64ccacc81186efbbb9f7
+          rc=0
+          offline "$out/test_operational_e19_opening_lab.cjs" "$tmp/src" >"$tmp/e19.json" 2>"$tmp/e19.err" || rc=$?
+          test -s "$tmp/e19.json" || {
+            echo OP5A_NO_RECEIPT
+            "$nodebin" -e 'const s=require("node:fs").readFileSync(process.argv[1],"utf8");console.log(JSON.stringify({safe:[...new Set(s.match(/(?:OP5_[A-Z_]+|ERR_ASSERTION|MODULE_NOT_FOUND|SyntaxError|ReferenceError|TypeError)/g)||[])],frames:[...new Set([...s.matchAll(/(?:test_operational_e19_opening_lab|operational_e19_opening_lab)\.cjs:\d+:\d+/g)].map(x=>x[0]))]}));' "$tmp/e19.err"
+            exit 1
+          }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify(r));a.equal(r.scope,"OP5A_E19_SIGNED_OPENING_LAB");a.equal(r.parentSourceSha256,"4c9b2296b62a0516909eb91e1a5c07edfe0aa16c7fb36f9f3d40ae3eda24b775");a.equal(r.total,16);a.equal(r.pass,16);a.equal(new Set(r.rows.map(x=>x.id)).size,16);a.ok(r.rows.every(x=>x.pass));a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.deployable,false);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/e19.json"
+          test "$rc" = 0
+          echo OP5A_16_SIGNED_E19_OPENING_LAB_NO_W_NO_GAS_NO_DEPLOY
+
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/operational_e19_integrated_lab.cjs)" = 585b1747b907e1ec9d022846236a276068fac3a0
+          test "$(git -C private-lab rev-parse HEAD:lab/trade-integrated-baseline/test_operational_e19_integrated_lab.cjs)" = 532d236ffcdf5a4fd581c5739c3895cca74243cd
+          rc=0
+          offline "$out/test_operational_e19_integrated_lab.cjs" "$tmp/src" >"$tmp/e19b.json" 2>"$tmp/e19b.err" || rc=$?
+          test -s "$tmp/e19b.json" || {
+            echo OP5B_NO_RECEIPT
+            "$nodebin" -e 'const s=require("node:fs").readFileSync(process.argv[1],"utf8");console.log(JSON.stringify({safe:[...new Set(s.match(/(?:OP5B_[A-Z_]+|ERR_ASSERTION|MODULE_NOT_FOUND|SyntaxError|ReferenceError|TypeError)/g)||[])],frames:[...new Set([...s.matchAll(/(?:test_operational_e19_integrated_lab|operational_e19_integrated_lab)\.cjs:\d+:\d+/g)].map(x=>x[0]))]}));' "$tmp/e19b.err"
+            exit 1
+          }
+          "$nodebin" -e 'const a=require("node:assert/strict"),f=require("node:fs"),r=JSON.parse(f.readFileSync(process.argv[1]));console.log(JSON.stringify({scope:r.scope,manifest:r.manifest,total:r.total,pass:r.pass,rows:r.rows.map(x=>({id:x.id,pass:x.pass,error:x.error,detail:x.detail&&/^(gate |view |preview |unexpected service effect)/.test(x.detail)?x.detail.split("\n")[0]:undefined,comparisons:x.comparisons})),physicalWrites:r.physicalWrites,certifiesP0:r.certifiesP0,deployable:r.deployable,W:r.W}));a.equal(r.scope,"OP5B_E19_REAL_OWNERS_LAB");a.equal(r.manifest.parentSourceSha256,"4c9b2296b62a0516909eb91e1a5c07edfe0aa16c7fb36f9f3d40ae3eda24b775");a.equal(r.total,21);a.equal(r.pass,21);a.equal(new Set(r.rows.map(x=>x.id)).size,21);a.ok(r.rows.every(x=>x.pass));a.equal(r.manifest.rollbackByteExact,true);a.equal(r.physicalWrites,0);a.equal(r.certifiesP0,0);a.equal(r.deployable,false);a.equal(r.W,"HOLD_EXTERNAL_EVIDENCE");' "$tmp/e19b.json"
+          test "$rc" = 0
+          echo OP5B_R1_21_REAL_OWNERS_LAB_NO_W_NO_GAS_NO_DEPLOY
